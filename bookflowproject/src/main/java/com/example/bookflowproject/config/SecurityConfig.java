@@ -4,7 +4,8 @@ import com.example.bookflowproject.security.JwtAuthenticationFilter;
 import com.example.bookflowproject.security.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,19 +54,22 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 
+    // Success handler: sets JWT cookie and redirects based on role
     @Bean
     public AuthenticationSuccessHandler roleBasedSuccessHandler() {
         return (request, response, authentication) -> {
-            // Generate JWT and store it in an HttpOnly cookie
+            // Generate JWT
             String token = jwtTokenProvider.generateToken(authentication);
-            Cookie jwtCookie = new Cookie("jwt", token);
-            jwtCookie.setHttpOnly(true);
-            jwtCookie.setSecure(true);
-            jwtCookie.setPath("/");
-            jwtCookie.setMaxAge(86400); // 24 hours
-            response.addCookie(jwtCookie);
 
-            // Redirect based on role
+            // Determine if request is secure (HTTPS)
+            boolean isSecure = request.isSecure();
+
+            // Set cookie manually with SameSite=None
+            response.addHeader("Set-Cookie",
+                    String.format("jwt=%s; HttpOnly; Secure=%b; SameSite=None; Path=/; Max-Age=%d",
+                            token, isSecure, 86400));
+
+            // Role-based redirect
             String redirectUrl = "/user/dashboard";
             for (GrantedAuthority authority : authentication.getAuthorities()) {
                 String role = authority.getAuthority();
@@ -83,11 +87,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // Apply JWT auth logic only for API routes, then continue the chain.
+        // JWT filter only for API routes
         OncePerRequestFilter apiOnlyJwtFilter = new OncePerRequestFilter() {
             @Override
-            protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest request,
-                                            jakarta.servlet.http.HttpServletResponse response,
+            protected void doFilterInternal(HttpServletRequest request,
+                                            HttpServletResponse response,
                                             FilterChain filterChain) throws ServletException, IOException {
                 if (request.getRequestURI().startsWith("/api/")) {
                     jwtAuthenticationFilter.authenticateRequest(request);
@@ -97,9 +101,11 @@ public class SecurityConfig {
         };
 
         http
+                // CSRF: exempt login, logout, and API routes
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/**")
+                        .ignoringRequestMatchers("/api/**", "/login", "/logout")
                 )
+                // Authorizations
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/register", "/error",
                                 "/css/**", "/js/**", "/webjars/**", "/images/**").permitAll()
@@ -113,6 +119,7 @@ public class SecurityConfig {
                         .requestMatchers("/dashboard", "/profile").authenticated()
                         .anyRequest().authenticated()
                 )
+                // Form login config
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
@@ -120,6 +127,7 @@ public class SecurityConfig {
                         .failureUrl("/login?error=true")
                         .permitAll()
                 )
+                // Logout
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout=true")
