@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - BookFlow</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar bg-dark text-white" id="sidebar">
+        <div class="sidebar-header p-3 text-center">
+            <i class="fas fa-book-open fa-2x mb-2"></i>
+            <h5 class="mb-0">BookFlow</h5>
+            <small class="text-muted">Admin Panel</small>
+        </div>
+        <hr class="text-secondary mx-3">
+        <ul class="nav flex-column px-2">
+            <li class="nav-item">
+                <a class="nav-link active text-white" href="/admin/dashboard">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-50" href="#">
+                    <i class="fas fa-users me-2"></i>Manage Users
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-50" href="#">
+                    <i class="fas fa-book me-2"></i>Manage Books
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-50" href="#">
+                    <i class="fas fa-hand-holding-heart me-2"></i>Borrowings
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-50" href="#">
+                    <i class="fas fa-chart-bar me-2"></i>Reports
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-50" href="#">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fa-2x me-2"></i>
+                <div>
+                    <small class="d-block fw-bold" th:text="${username}">Admin</small>
+                    <span class="badge bg-danger">Admin</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content flex-grow-1">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+            <div class="container-fluid">
+                <button class="btn btn-link text-dark" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="navbar-text fw-bold text-primary">Admin Dashboard</span>
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <a class="btn btn-light dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span th:text="${username}">Admin</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/logout}" method="post">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Content -->
+        <div class="container-fluid p-4">
+            <!-- Welcome Banner -->
+            <div class="welcome-banner mb-4 p-4 rounded-3 text-white">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-crown fa-3x"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-4">
+                        <h3 class="mb-1">Welcome back, <span th:text="${username}">Admin</span>!</h3>
+                        <p class="mb-0 opacity-75">You have full system access and control. Here's your overview.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-primary-subtle text-primary rounded-3 p-3 me-3">
+                                    <i class="fas fa-users fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Total Users</h6>
+                                    <h3 class="mb-0 fw-bold" th:text="${totalUsers}">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-success-subtle text-success rounded-3 p-3 me-3">
+                                    <i class="fas fa-book fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Total Books</h6>
+                                    <h3 class="mb-0 fw-bold" th:text="${totalBooks}">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-info-subtle text-info rounded-3 p-3 me-3">
+                                    <i class="fas fa-hand-holding-heart fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Active Loans</h6>
+                                    <h3 class="mb-0 fw-bold" th:text="${activeLoans}">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-warning-subtle text-warning rounded-3 p-3 me-3">
+                                    <i class="fas fa-exclamation-triangle fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Overdue</h6>
+                                    <h3 class="mb-0 fw-bold" th:text="${overdueReturns}">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Features -->
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="mb-0"><i class="fas fa-tools me-2 text-primary"></i>Administration Tools</h5>
+                        </div>
+                        <div class="card-body px-4">
+                            <div class="list-group list-group-flush">
+                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 d-flex align-items-center py-3">
+                                    <div class="icon-box bg-primary-subtle text-primary rounded-3 p-2 me-3">
+                                        <i class="fas fa-user-plus fa-fw"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <strong>User Management</strong>
+                                        <p class="mb-0 small text-muted">Add, edit, or remove users</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 d-flex align-items-center py-3">
+                                    <div class="icon-box bg-success-subtle text-success rounded-3 p-2 me-3">
+                                        <i class="fas fa-book fa-fw"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <strong>Book Management</strong>
+                                        <p class="mb-0 small text-muted">Manage the library catalog</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 d-flex align-items-center py-3">
+                                    <div class="icon-box bg-warning-subtle text-warning rounded-3 p-2 me-3">
+                                        <i class="fas fa-chart-bar fa-fw"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <strong>System Reports</strong>
+                                        <p class="mb-0 small text-muted">View analytics and reports</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 d-flex align-items-center py-3">
+                                    <div class="icon-box bg-danger-subtle text-danger rounded-3 p-2 me-3">
+                                        <i class="fas fa-shield-alt fa-fw"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <strong>Security Settings</strong>
+                                        <p class="mb-0 small text-muted">Manage roles and permissions</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="mb-0"><i class="fas fa-clock me-2 text-primary"></i>Recent Activity</h5>
+                        </div>
+                        <div class="card-body px-4">
+                            <div class="activity-item d-flex mb-3 pb-3 border-bottom">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-success rounded-pill px-3 py-2">NEW</span>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <strong>System initialized</strong>
+                                    <p class="mb-0 small text-muted">Seed data loaded successfully</p>
+                                </div>
+                            </div>
+                            <div class="activity-item d-flex mb-3 pb-3 border-bottom">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-info rounded-pill px-3 py-2">INFO</span>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <strong>Books catalog ready</strong>
+                                    <p class="mb-0 small text-muted">Sample books have been added</p>
+                                </div>
+                            </div>
+                            <div class="activity-item d-flex">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-primary rounded-pill px-3 py-2">SYS</span>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <strong>Roles configured</strong>
+                                    <p class="mb-0 small text-muted">Admin, Librarian, User roles active</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer text-center py-3 mt-4">
+            <small class="text-muted">&copy; 2026 BookFlow Project. Admin Portal v1.0</small>
+        </footer>
+    </div>
+</div>
+
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile - BookFlow</title>
+  <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<!-- Navigation (same as dashboard) -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+  <div class="container">
+    <a class="navbar-brand" href="/dashboard">
+      <i class="fas fa-book-open me-2"></i>BookFlow
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/dashboard">
+            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+            <i class="fas fa-user-circle me-1"></i>
+            <span sec:authentication="name">User</span>
+            <span class="badge bg-warning" sec:authorize="hasRole('ADMIN')">Admin</span>
+            <span class="badge bg-info" sec:authorize="hasRole('LIBRARIAN')">Librarian</span>
+            <span class="badge bg-success" sec:authorize="hasRole('USER')">User</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item active" href="/profile">
+                <i class="fas fa-user me-2"></i>Profile
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form th:action="@{/logout}" method="post">
+                <button type="submit" class="dropdown-item">
+                  <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+              </form>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-4 mb-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <div class="profile-image mb-3">
+            <i class="fas fa-user-circle fa-5x text-primary"></i>
+          </div>
+          <h4 sec:authentication="name">Username</h4>
+          <p class="text-muted">
+            <span sec:authorize="hasRole('ADMIN')" class="badge bg-warning">Administrator</span>
+            <span sec:authorize="hasRole('LIBRARIAN')" class="badge bg-info">Librarian</span>
+            <span sec:authorize="hasRole('USER')" class="badge bg-success">Member</span>
+          </p>
+          <p>
+            <i class="fas fa-envelope me-2"></i>
+            <span sec:authentication="name">email@example.com</span>
+          </p>
+          <p>
+            <i class="fas fa-calendar me-2"></i>
+            Member since: March 2024
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8 mb-4">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-edit me-2"></i>Edit Profile
+          </h5>
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">First Name</label>
+                <input type="text" class="form-control" value="John">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Last Name</label>
+                <input type="text" class="form-control" value="Doe">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" value="john.doe@example.com">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Phone</label>
+              <input type="tel" class="form-control" value="(555) 123-4567">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Address</label>
+              <textarea class="form-control" rows="3">123 Main Street, City, State 12345</textarea>
+            </div>
+
+            <hr>
+
+            <h6 class="mb-3">Change Password</h6>
+
+            <div class="mb-3">
+              <label class="form-label">Current Password</label>
+              <input type="password" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">New Password</label>
+              <input type="password" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Confirm New Password</label>
+              <input type="password" class="form-control">
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-2"></i>Save Changes
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="text-white mt-5">
+  <div class="container text-center">
+    <p class="mb-0">&copy; 2024 BookFlow Project. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="/webjars/jquery/3.7.1/jquery.min.js"></script>
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
