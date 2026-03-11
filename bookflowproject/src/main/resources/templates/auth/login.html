@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Login - BookFlow</title>
+  <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-light">
+<div class="container">
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-lg border-0 rounded-lg">
+        <div class="card-header bg-primary text-white text-center py-4">
+          <h3 class="mb-0">
+            <i class="fas fa-book-open me-2"></i>BookFlow
+          </h3>
+        </div>
+        <div class="card-body p-4">
+          <h4 class="text-center mb-4">Welcome Back!</h4>
+
+          <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            Invalid username or password
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+
+          <div th:if="${param.logout}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            You have been logged out successfully
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+
+          <form th:action="@{/login}" method="post">
+            <div class="mb-3">
+              <label for="username" class="form-label">
+                <i class="fas fa-user me-2"></i>Username or Email
+              </label>
+              <input type="text" class="form-control" id="username" name="username"
+                     placeholder="Enter your username or email" required autofocus>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">
+                <i class="fas fa-lock me-2"></i>Password
+              </label>
+              <input type="password" class="form-control" id="password" name="password"
+                     placeholder="Enter your password" required>
+            </div>
+
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="rememberMe" name="remember-me">
+              <label class="form-check-label" for="rememberMe">Remember me</label>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+              </button>
+            </div>
+          </form>
+
+          <hr class="my-4">
+
+          <div class="text-center">
+            <p class="mb-0">Don't have an account?
+              <a th:href="@{/register}" class="text-primary">Register here</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Demo Credentials Card -->
+      <div class="card mt-3 border-0 bg-white shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted mb-3">
+            <i class="fas fa-info-circle me-2"></i>Demo Credentials
+          </h6>
+          <div class="row g-2">
+            <div class="col-4">
+              <div class="p-2 border rounded">
+                <strong>Admin</strong><br>
+                <small>admin / admin123</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-2 border rounded">
+                <strong>Librarian</strong><br>
+                <small>librarian / librarian123</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-2 border rounded">
+                <strong>User</strong><br>
+                <small>user / user123</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
