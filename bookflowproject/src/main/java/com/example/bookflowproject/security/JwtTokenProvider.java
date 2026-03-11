@@ -3,8 +3,8 @@ package com.example.bookflowproject.security;
 import com.example.bookflowproject.config.JwtProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -13,11 +13,15 @@ import java.security.Key;
 import java.util.Date;
 
 @Component
-@Slf4j
-@RequiredArgsConstructor
 public class JwtTokenProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
+
     private final JwtProperties jwtProperties;
+
+    public JwtTokenProvider(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+    }
 
     private Key key() {
         return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());

@@ -1,11 +1,9 @@
 package com.example.bookflowproject.config;
 
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@Getter
 public class JwtProperties {
 
     @Value("${app.jwt.secret}")
@@ -13,5 +11,13 @@ public class JwtProperties {
 
     @Value("${app.jwt.expiration}")
     private int expiration;
+
+    public String getSecret() {
+        return secret;
+    }
+
+    public int getExpiration() {
+        return expiration;
+    }
 }
 
