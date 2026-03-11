@@ -60,7 +60,7 @@ public class SecurityConfig {
             String token = jwtTokenProvider.generateToken(authentication);
             Cookie jwtCookie = new Cookie("jwt", token);
             jwtCookie.setHttpOnly(true);
-            jwtCookie.setSecure(false); // Set to true in production with HTTPS
+            jwtCookie.setSecure(true);
             jwtCookie.setPath("/");
             jwtCookie.setMaxAge(86400); // 24 hours
             response.addCookie(jwtCookie);
