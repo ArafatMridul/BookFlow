@@ -61,13 +61,23 @@ public class SecurityConfig {
             // Generate JWT
             String token = jwtTokenProvider.generateToken(authentication);
 
-            // Determine if request is secure (HTTPS)
-            boolean isSecure = request.isSecure();
+            // Determine if request is secure (HTTPS) - also check forwarded headers
+            // Behind a reverse proxy (Render, Railway, etc.), request.isSecure() may be false
+            // even though the client is using HTTPS. Check X-Forwarded-Proto header too.
+            boolean isSecure = request.isSecure()
+                    || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
 
-            // Set cookie manually with SameSite=None
-            response.addHeader("Set-Cookie",
-                    String.format("jwt=%s; HttpOnly; Secure=%b; SameSite=None; Path=/; Max-Age=%d",
-                            token, isSecure, 86400));
+            // Build Set-Cookie header properly:
+            // - If secure (HTTPS): use Secure; SameSite=Lax
+            // - If not secure (local dev HTTP): omit Secure; SameSite=Lax
+            // Note: SameSite=None REQUIRES Secure flag and is only needed for cross-site cookies.
+            // For same-site form login + redirect, SameSite=Lax is correct.
+            StringBuilder cookie = new StringBuilder();
+            cookie.append(String.format("jwt=%s; HttpOnly; Path=/; Max-Age=%d; SameSite=Lax", token, 86400));
+            if (isSecure) {
+                cookie.append("; Secure");
+            }
+            response.addHeader("Set-Cookie", cookie.toString());
 
             // Role-based redirect
             String redirectUrl = "/user/dashboard";
