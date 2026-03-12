@@ -21,6 +21,13 @@ public class JwtTokenProvider {
 
     public JwtTokenProvider(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
+        // Validate key length at startup
+        int keyBytes = jwtProperties.getSecret() != null ? jwtProperties.getSecret().getBytes().length : 0;
+        log.info("JWT secret configured: {} bytes ({} bits). Minimum 32 bytes required.",
+                keyBytes, keyBytes * 8);
+        if (keyBytes < 32) {
+            log.error("JWT_SECRET is too short ({} bytes). Must be at least 32 bytes (256 bits). JWT auth will fail!", keyBytes);
+        }
     }
 
     private Key key() {
@@ -36,7 +43,7 @@ public class JwtTokenProvider {
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(key(), SignatureAlgorithm.HS512)
+                .signWith(key())
                 .compact();
     }
 
