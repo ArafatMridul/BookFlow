@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +31,7 @@ import java.io.IOException;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
@@ -58,28 +60,31 @@ public class SecurityConfig {
     @Bean
     public AuthenticationSuccessHandler roleBasedSuccessHandler() {
         return (request, response, authentication) -> {
-            // Generate JWT
-            String token = jwtTokenProvider.generateToken(authentication);
+            // Generate JWT and set cookie (best-effort; session auth is primary for web pages)
+            try {
+                String token = jwtTokenProvider.generateToken(authentication);
 
-            // Determine if request is secure (HTTPS) - also check forwarded headers
-            // Behind a reverse proxy (Render, Railway, etc.), request.isSecure() may be false
-            // even though the client is using HTTPS. Check X-Forwarded-Proto header too.
-            boolean isSecure = request.isSecure()
-                    || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
+                // Determine if request is secure (HTTPS) - also check forwarded headers
+                // Behind a reverse proxy (Render, Railway, etc.), request.isSecure() may be false
+                // even though the client is using HTTPS. Check X-Forwarded-Proto header too.
+                boolean isSecure = request.isSecure()
+                        || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
 
-            // Build Set-Cookie header properly:
-            // - If secure (HTTPS): use Secure; SameSite=Lax
-            // - If not secure (local dev HTTP): omit Secure; SameSite=Lax
-            // Note: SameSite=None REQUIRES Secure flag and is only needed for cross-site cookies.
-            // For same-site form login + redirect, SameSite=Lax is correct.
-            StringBuilder cookie = new StringBuilder();
-            cookie.append(String.format("jwt=%s; HttpOnly; Path=/; Max-Age=%d; SameSite=Lax", token, 86400));
-            if (isSecure) {
-                cookie.append("; Secure");
+                // Build Set-Cookie header properly
+                StringBuilder cookie = new StringBuilder();
+                cookie.append(String.format("jwt=%s; HttpOnly; Path=/; Max-Age=%d; SameSite=Lax", token, 86400));
+                if (isSecure) {
+                    cookie.append("; Secure");
+                }
+                response.addHeader("Set-Cookie", cookie.toString());
+                log.debug("JWT cookie set successfully for user: {}", authentication.getName());
+            } catch (Exception e) {
+                // Don't fail the login if JWT generation fails - session auth still works
+                log.error("Failed to generate/set JWT cookie for user: {}. Error: {}",
+                        authentication.getName(), e.getMessage(), e);
             }
-            response.addHeader("Set-Cookie", cookie.toString());
 
-            // Role-based redirect
+            // Role-based redirect (always happens, even if JWT failed)
             String redirectUrl = "/user/dashboard";
             for (GrantedAuthority authority : authentication.getAuthorities()) {
                 String role = authority.getAuthority();
