@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borrowing Requests - BookFlow</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div class="sidebar bg-dark text-white" id="sidebar">
+        <div class="sidebar-header p-3 text-center">
+            <i class="fas fa-book-open fa-2x mb-2"></i>
+            <h5 class="mb-0">BookFlow</h5>
+            <small class="text-muted">Librarian Panel</small>
+        </div>
+        <hr class="text-secondary mx-3">
+        <ul class="nav flex-column px-2">
+            <li class="nav-item"><a class="nav-link text-white-50" href="/librarian/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link active text-white" href="/librarian/borrowings"><i class="fas fa-hand-holding-heart me-2"></i>Borrow Requests</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/user/catalog"><i class="fas fa-images me-2"></i>See Catalog</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content flex-grow-1">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+            <div class="container-fluid">
+                <button class="btn btn-link text-dark" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+                <span class="navbar-text fw-bold text-info">Borrowing Requests</span>
+                <span class="navbar-text" th:text="${username}">Librarian</span>
+            </div>
+        </nav>
+
+        <div class="container-fluid p-4">
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-triangle-exclamation me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="mb-0"><i class="fas fa-inbox me-2 text-info"></i>Pending Requests</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                            <tr>
+                                <th>Patron</th>
+                                <th>Book</th>
+                                <th>Requested On</th>
+                                <th>Default Due Date</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="borrowing : ${requestedBorrowings}">
+                                <td>
+                                    <div class="fw-semibold" th:text="${borrowing.user != null ? borrowing.user.username : 'Unknown user'}">user</div>
+                                    <div class="small text-muted" th:text="${borrowing.user != null ? borrowing.user.email : '-'}">email</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold" th:text="${borrowing.book != null ? borrowing.book.title : 'Unknown book'}">Book</div>
+                                    <div class="small text-muted" th:text="${borrowing.book != null ? borrowing.book.author : '-'}">Author</div>
+                                </td>
+                                <td th:text="${borrowing.borrowDate}">2026-03-14</td>
+                                <td th:text="${borrowing.dueDate}">2026-03-28</td>
+                                <td class="text-end">
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <form th:action="@{/librarian/borrowings/{id}/approve(id=${borrowing.id})}" method="post">
+                                            <button class="btn btn-sm btn-success" type="submit"><i class="fas fa-check me-1"></i>Approve</button>
+                                        </form>
+                                        <form th:action="@{/librarian/borrowings/{id}/reject(id=${borrowing.id})}" method="post">
+                                            <button class="btn btn-sm btn-outline-danger" type="submit"><i class="fas fa-xmark me-1"></i>Reject</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(requestedBorrowings)}">
+                                <td colspan="5" class="text-center text-muted py-4">No pending requests.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="mb-0"><i class="fas fa-book-reader me-2 text-success"></i>Currently Borrowed</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                            <tr>
+                                <th>Patron</th>
+                                <th>Book</th>
+                                <th>Borrowed On</th>
+                                <th>Due Date</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="borrowing : ${activeBorrowings}">
+                                <td th:text="${borrowing.user != null ? borrowing.user.username : 'Unknown user'}">user</td>
+                                <td th:text="${borrowing.book != null ? borrowing.book.title : 'Unknown book'}">book</td>
+                                <td th:text="${borrowing.borrowDate}">2026-03-14</td>
+                                <td th:text="${borrowing.dueDate}">2026-03-28</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(activeBorrowings)}">
+                                <td colspan="4" class="text-center text-muted py-4">No active borrowings.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

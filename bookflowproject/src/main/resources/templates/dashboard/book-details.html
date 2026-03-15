@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Details - BookFlow</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .book-cover { height: 420px; border-radius: .75rem; overflow: hidden; display:flex; align-items:center; justify-content:center; }
+        .book-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    </style>
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div class="sidebar bg-dark text-white" id="sidebar">
+        <div class="sidebar-header p-3 text-center">
+            <i class="fas fa-book-open fa-2x mb-2"></i>
+            <h5 class="mb-0">BookFlow</h5>
+            <small class="text-muted">Member Portal</small>
+        </div>
+        <hr class="text-secondary mx-3">
+        <ul class="nav flex-column px-2">
+            <li class="nav-item"><a class="nav-link text-white-50" href="/user/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link active text-white" href="/user/catalog"><i class="fas fa-search me-2"></i>Browse Catalog</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/user/my-borrowings"><i class="fas fa-book-open me-2"></i>My Borrowings</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/user/wishlist"><i class="fas fa-heart me-2"></i>Wishlist</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content flex-grow-1">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+            <div class="container-fluid">
+                <a href="/user/catalog" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Back to Catalog</a>
+                <span class="navbar-text fw-bold text-success">Book Details</span>
+                <span class="navbar-text" th:text="${username}">User</span>
+            </div>
+        </nav>
+
+        <div class="container-fluid p-4">
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-triangle-exclamation me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="book-cover" th:classappend="${book.availableCopies > 0} ? 'bg-success-subtle' : 'bg-secondary-subtle'">
+                        <img th:if="${!#strings.isEmpty(book.coverImageUrl)}" th:src="${book.coverImageUrl}" th:alt="${book.title + ' cover'}">
+                        <i th:unless="${!#strings.isEmpty(book.coverImageUrl)}" class="fas fa-book fa-5x" th:classappend="${book.availableCopies > 0} ? 'text-success' : 'text-secondary'"></i>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h2 class="fw-bold mb-2" th:text="${book.title}">Book Title</h2>
+                            <p class="text-muted fs-5 mb-3">by <span th:text="${book.author}">Author</span></p>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">ISBN</small><strong th:text="${book.isbn != null ? book.isbn : 'N/A'}">N/A</strong></div></div>
+                                <div class="col-md-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Publisher</small><strong th:text="${book.publisher != null ? book.publisher : 'N/A'}">N/A</strong></div></div>
+                                <div class="col-md-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Publication Year</small><strong th:text="${book.publicationYear != null ? book.publicationYear : 'N/A'}">N/A</strong></div></div>
+                                <div class="col-md-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Availability</small><strong th:text="${book.availableCopies + ' / ' + book.totalCopies + ' copies'}">0 / 0 copies</strong></div></div>
+                            </div>
+
+                            <div th:if="${activeBorrowing}" class="alert alert-success mb-3">
+                                <i class="fas fa-book-reader me-2"></i>You already borrowed this book.
+                            </div>
+                            <div th:if="${alreadyRequested}" class="alert alert-warning mb-3">
+                                <i class="fas fa-hourglass-half me-2"></i>Your borrow request is pending librarian approval.
+                            </div>
+
+                            <form th:if="${!activeBorrowing and !alreadyRequested}" th:action="@{/user/catalog/{id}/request-borrow(id=${book.id})}" method="post">
+                                <button class="btn btn-success btn-lg" type="submit">
+                                    <i class="fas fa-paper-plane me-2"></i>Request to Borrow
+                                </button>
+                                <p class="text-muted small mt-2 mb-0">Your request will be sent to the librarian for approval.</p>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
