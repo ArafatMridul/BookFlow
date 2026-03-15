@@ -1,5 +1,4 @@
 package com.example.bookflowproject.controller;
-
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -20,8 +19,10 @@ import com.example.bookflowproject.entity.Borrowing;
 import com.example.bookflowproject.repository.BookRepository;
 import com.example.bookflowproject.repository.BorrowingRepository;
 import com.example.bookflowproject.repository.UserRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+
 
 @Controller
 @RequestMapping("/user")
@@ -30,6 +31,7 @@ public class CatalogController {
 
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
+
     private final BorrowingRepository borrowingRepository;
 
     @GetMapping("/catalog")
@@ -40,6 +42,7 @@ public class CatalogController {
                 : bookRepository.findAll();
 
         Set<Long> wishlistIds = new HashSet<>();
+
         Set<Long> requestedBookIds = new HashSet<>();
         Set<Long> borrowedBookIds = new HashSet<>();
         if (authentication != null) {
@@ -63,11 +66,14 @@ public class CatalogController {
 
         model.addAttribute("books", books);
         model.addAttribute("wishlistIds", wishlistIds);
+
         model.addAttribute("requestedBookIds", requestedBookIds);
         model.addAttribute("borrowedBookIds", borrowedBookIds);
+
         model.addAttribute("search", search != null ? search : "");
         return "dashboard/catalog";
     }
+
 
     @GetMapping("/catalog/{bookId}")
     public String bookDetails(@PathVariable Long bookId, Model model, Authentication authentication,
@@ -155,6 +161,7 @@ public class CatalogController {
         }
         return "dashboard/my-borrowings";
     }
+
 
     @GetMapping("/wishlist")
     public String viewWishlist(Model model, Authentication authentication) {
