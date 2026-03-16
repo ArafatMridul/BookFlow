@@ -40,7 +40,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white-50" href="#">
+                <a class="nav-link text-white-50" href="/user/my-borrowings">
                     <i class="fas fa-book-open me-2"></i>My Borrowings
                 </a>
             </li>
@@ -115,6 +115,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-triangle-exclamation me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
             <!-- Search -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
@@ -146,6 +151,7 @@
                 <div class="col" th:each="book : ${books}">
                     <div class="card book-card border-0 shadow-sm h-100">
                         <!-- Cover -->
+                        <a th:href="@{/user/catalog/{id}(id=${book.id})}" class="text-decoration-none">
                         <div class="book-cover" th:classappend="${book.availableCopies > 0} ? 'bg-success-subtle' : 'bg-secondary-subtle'">
                             <img th:if="${!#strings.isEmpty(book.coverImageUrl)}"
                                  th:src="${book.coverImageUrl}"
@@ -154,6 +160,8 @@
                                class="fas fa-book fa-3x"
                                th:classappend="${book.availableCopies > 0} ? 'text-success' : 'text-secondary'"></i>
                         </div>
+                        </a>
+
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-start mb-1">
                                 <h6 class="card-title fw-bold mb-0 flex-grow-1 me-2"
@@ -196,6 +204,17 @@
                                         <i class="fas fa-times-circle me-1"></i>Unavailable
                                     </span>
                                     <small class="text-muted" th:if="${book.isbn}" th:text="'ISBN: ' + ${book.isbn.substring(book.isbn.length() > 7 ? book.isbn.length() - 4 : 0)}">ISBN</small>
+                                </div>
+                                <div class="mt-2 d-grid">
+                                    <a th:href="@{/user/catalog/{id}(id=${book.id})}" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-circle-info me-1"></i>View Details
+                                    </a>
+                                </div>
+                                <div th:if="${requestedBookIds.contains(book.id)}" class="small text-warning mt-2">
+                                    <i class="fas fa-hourglass-half me-1"></i>Borrow request pending
+                                </div>
+                                <div th:if="${borrowedBookIds.contains(book.id)}" class="small text-success mt-2">
+                                    <i class="fas fa-book-reader me-1"></i>Currently borrowed by you
                                 </div>
                             </div>
                         </div>
