@@ -91,6 +91,54 @@
                 </div>
             </div>
 
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="mb-0"><i class="fas fa-box-open me-2 text-primary"></i>Return Requests</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                            <tr>
+                                <th>Patron</th>
+                                <th>Book</th>
+                                <th>Borrowed On</th>
+                                <th>Due Date</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="borrowing : ${returnRequestedBorrowings}">
+                                <td>
+                                    <div class="fw-semibold" th:text="${borrowing.user != null ? borrowing.user.username : 'Unknown user'}">user</div>
+                                    <div class="small text-muted" th:text="${borrowing.user != null ? borrowing.user.email : '-'}">email</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold" th:text="${borrowing.book != null ? borrowing.book.title : 'Unknown book'}">Book</div>
+                                    <div class="small text-muted" th:text="${borrowing.book != null ? borrowing.book.author : '-'}">Author</div>
+                                </td>
+                                <td th:text="${borrowing.borrowDate}">2026-03-14</td>
+                                <td th:text="${borrowing.dueDate}">2026-03-28</td>
+                                <td class="text-end">
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <form th:action="@{/librarian/borrowings/{id}/process-return(id=${borrowing.id})}" method="post">
+                                            <button class="btn btn-sm btn-primary" type="submit"><i class="fas fa-check me-1"></i>Process Return</button>
+                                        </form>
+                                        <form th:action="@{/librarian/borrowings/{id}/reject-return(id=${borrowing.id})}" method="post">
+                                            <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="fas fa-undo me-1"></i>Keep Borrowed</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(returnRequestedBorrowings)}">
+                                <td colspan="5" class="text-center text-muted py-4">No return requests.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 pt-4 px-4">
                     <h5 class="mb-0"><i class="fas fa-book-reader me-2 text-success"></i>Currently Borrowed</h5>
@@ -104,6 +152,7 @@
                                 <th>Book</th>
                                 <th>Borrowed On</th>
                                 <th>Due Date</th>
+                                <th>Status</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -112,9 +161,13 @@
                                 <td th:text="${borrowing.book != null ? borrowing.book.title : 'Unknown book'}">book</td>
                                 <td th:text="${borrowing.borrowDate}">2026-03-14</td>
                                 <td th:text="${borrowing.dueDate}">2026-03-28</td>
+                                <td>
+                                    <span class="badge bg-success" th:if="${borrowing.status == 'BORROWED'}">BORROWED</span>
+                                    <span class="badge bg-danger" th:if="${borrowing.status == 'OVERDUE'}">OVERDUE</span>
+                                </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(activeBorrowings)}">
-                                <td colspan="4" class="text-center text-muted py-4">No active borrowings.</td>
+                                <td colspan="5" class="text-center text-muted py-4">No active borrowings.</td>
                             </tr>
                             </tbody>
                         </table>

@@ -133,7 +133,7 @@ public class CatalogController {
         boolean hasOpenRequest = borrowingRepository.existsByUserIdAndBookIdAndStatusIn(
                 user.getId(),
                 bookId,
-                Arrays.asList("REQUESTED", "BORROWED", "OVERDUE")
+                Arrays.asList("REQUESTED", "BORROWED", "OVERDUE", "RETURN_REQUESTED")
         );
 
         if (hasOpenRequest) {
@@ -162,6 +162,34 @@ public class CatalogController {
         return "dashboard/my-borrowings";
     }
 
+    @PostMapping("/my-borrowings/{borrowingId}/request-return")
+    public String requestReturn(@PathVariable Long borrowingId,
+                                Authentication authentication,
+                                RedirectAttributes redirectAttributes) {
+        if (authentication == null) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Please log in first.");
+            return "redirect:/login";
+        }
+
+        Borrowing borrowing = borrowingRepository.findById(borrowingId).orElse(null);
+        if (borrowing == null || borrowing.getUser() == null
+                || !authentication.getName().equalsIgnoreCase(borrowing.getUser().getUsername())) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Borrowing record not found.");
+            return "redirect:/user/my-borrowings";
+        }
+
+        if (!"BORROWED".equalsIgnoreCase(borrowing.getStatus())
+                && !"OVERDUE".equalsIgnoreCase(borrowing.getStatus())) {
+            redirectAttributes.addFlashAttribute("errorMsg", "This item is not eligible for return request.");
+            return "redirect:/user/my-borrowings";
+        }
+
+        borrowing.setStatus("RETURN_REQUESTED");
+        borrowingRepository.save(borrowing);
+
+        redirectAttributes.addFlashAttribute("successMsg", "Return request sent to the librarian.");
+        return "redirect:/user/my-borrowings";
+    }
 
     @GetMapping("/wishlist")
     public String viewWishlist(Model model, Authentication authentication) {
