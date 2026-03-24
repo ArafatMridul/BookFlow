@@ -41,5 +41,5 @@ public class Borrowing {
     @Column(name = "return_date")
     private LocalDate returnDate;
 
-    private String status; // REQUESTED, BORROWED, RETURNED, OVERDUE, REJECTED
+    private String status; // REQUESTED, BORROWED, RETURN_REQUESTED, RETURNED, OVERDUE, REJECTED
 }
