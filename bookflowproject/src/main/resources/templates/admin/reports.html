@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Reports - BookFlow</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div class="sidebar bg-dark text-white" id="sidebar">
+        <div class="sidebar-header p-3 text-center">
+            <i class="fas fa-book-open fa-2x mb-2"></i>
+            <h5 class="mb-0">BookFlow</h5>
+            <small class="text-muted">Admin Panel</small>
+        </div>
+        <hr class="text-secondary mx-3">
+        <ul class="nav flex-column px-2">
+            <li class="nav-item"><a class="nav-link text-white-50" href="/admin/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/admin/users"><i class="fas fa-users me-2"></i>Manage Users</a></li>
+            <li class="nav-item"><a class="nav-link active text-white" href="/admin/reports"><i class="fas fa-chart-bar me-2"></i>Reports</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/admin/books"><i class="fas fa-book me-2"></i>Book Overview</a></li>
+        </ul>
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fa-2x me-2"></i>
+                <div>
+                    <small class="d-block fw-bold" th:text="${username}">Admin</small>
+                    <span class="badge bg-danger">Admin</span>
+                </div>
+            </div>
+            <form th:action="@{/logout}" method="post" class="mt-3">
+                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-content flex-grow-1">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+            <div class="container-fluid">
+                <button class="btn btn-link text-dark" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+                <span class="navbar-text fw-bold text-primary">Activity Reports</span>
+                <div class="d-flex align-items-center">
+                    <a href="/profile" class="btn btn-light btn-sm me-3"><i class="fas fa-user me-1"></i>Profile</a>
+                    <span class="navbar-text" th:text="${username}">Admin</span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid p-4">
+            <div class="row g-4 mb-4">
+                <div class="col-md-3"><div class="card stat-card border-0 shadow-sm h-100"><div class="card-body"><h6 class="text-muted text-uppercase small fw-bold mb-1">Users</h6><h3 class="mb-0 fw-bold" th:text="${totalUsers}">0</h3></div></div></div>
+                <div class="col-md-3"><div class="card stat-card border-0 shadow-sm h-100"><div class="card-body"><h6 class="text-muted text-uppercase small fw-bold mb-1">Librarians</h6><h3 class="mb-0 fw-bold" th:text="${totalLibrarians}">0</h3></div></div></div>
+                <div class="col-md-3"><div class="card stat-card border-0 shadow-sm h-100"><div class="card-body"><h6 class="text-muted text-uppercase small fw-bold mb-1">Pending Requests</h6><h3 class="mb-0 fw-bold" th:text="${pendingBorrowRequests}">0</h3></div></div></div>
+                <div class="col-md-3"><div class="card stat-card border-0 shadow-sm h-100"><div class="card-body"><h6 class="text-muted text-uppercase small fw-bold mb-1">Return Requests</h6><h3 class="mb-0 fw-bold" th:text="${pendingReturnRequests}">0</h3></div></div></div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4"><h5 class="mb-0"><i class="fas fa-users me-2 text-primary"></i>User Activity</h5></div>
+                        <div class="card-body px-4 pb-4">
+                            <div class="row g-3">
+                                <div class="col-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Members</small><strong th:text="${totalMembers}">0</strong></div></div>
+                                <div class="col-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Returned</small><strong th:text="${returnedLoans}">0</strong></div></div>
+                                <div class="col-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Overdue</small><strong th:text="${overdueLoans}">0</strong></div></div>
+                                <div class="col-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Rejected</small><strong th:text="${rejectedRequests}">0</strong></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4"><h5 class="mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>Librarian Workload</h5></div>
+                        <div class="card-body px-4 pb-4">
+                            <div class="row g-3">
+                                <div class="col-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Active Loans</small><strong th:text="${activeLoans}">0</strong></div></div>
+                                <div class="col-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Books in Library</small><strong th:text="${totalBooks}">0</strong></div></div>
+                                <div class="col-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Pending Borrow</small><strong th:text="${pendingBorrowRequests}">0</strong></div></div>
+                                <div class="col-6"><div class="p-3 bg-light rounded-3"><small class="text-muted d-block">Pending Return</small><strong th:text="${pendingReturnRequests}">0</strong></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2 text-primary"></i>Recent Borrowing Activity</h5>
+                    <span class="badge bg-primary" th:text="${recentBorrowings != null ? recentBorrowings.size() : 0}">0</span>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Book</th>
+                                <th>Status</th>
+                                <th>Borrowed</th>
+                                <th>Due</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="borrowing : ${recentBorrowings}">
+                                <td th:text="${borrowing.user != null ? borrowing.user.username : 'Unknown'}">user</td>
+                                <td th:text="${borrowing.book != null ? borrowing.book.title : 'Unknown'}">book</td>
+                                <td>
+                                    <span class="badge bg-warning" th:if="${borrowing.status == 'REQUESTED'}">REQUESTED</span>
+                                    <span class="badge bg-info" th:if="${borrowing.status == 'RETURN_REQUESTED'}">RETURN REQUESTED</span>
+                                    <span class="badge bg-success" th:if="${borrowing.status == 'BORROWED'}">BORROWED</span>
+                                    <span class="badge bg-danger" th:if="${borrowing.status == 'OVERDUE'}">OVERDUE</span>
+                                    <span class="badge bg-secondary" th:if="${borrowing.status == 'RETURNED'}">RETURNED</span>
+                                    <span class="badge bg-dark" th:if="${borrowing.status == 'REJECTED'}">REJECTED</span>
+                                </td>
+                                <td th:text="${borrowing.borrowDate}">-</td>
+                                <td th:text="${borrowing.dueDate}">-</td>
+                            </tr>
+                            <tr th:if="${recentBorrowings == null or #lists.isEmpty(recentBorrowings)}">
+                                <td colspan="5" class="text-center text-muted py-4">No activity available yet.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
+

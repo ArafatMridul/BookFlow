@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="admin-dashboard-page">
 <div class="d-flex" id="wrapper">
     <!-- Sidebar -->
     <div class="sidebar bg-dark text-white" id="sidebar">
@@ -25,28 +25,18 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white-50" href="#">
+                <a class="nav-link text-white-50" href="/admin/users">
                     <i class="fas fa-users me-2"></i>Manage Users
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white-50" href="#">
-                    <i class="fas fa-book me-2"></i>Manage Books
+                <a class="nav-link text-white-50" href="/admin/books">
+                    <i class="fas fa-book me-2"></i>Book Overview
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white-50" href="#">
-                    <i class="fas fa-hand-holding-heart me-2"></i>Borrowings
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white-50" href="#">
+                <a class="nav-link text-white-50" href="/admin/reports">
                     <i class="fas fa-chart-bar me-2"></i>Reports
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white-50" href="#">
-                    <i class="fas fa-cog me-2"></i>Settings
                 </a>
             </li>
         </ul>
@@ -74,7 +64,7 @@
                 <button class="btn btn-link text-dark" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
                 </button>
-                <span class="navbar-text fw-bold text-primary">Admin Dashboard</span>
+                <span class="navbar-text fw-bold text-primary">Admin Command Center</span>
                 <div class="d-flex align-items-center">
                     <a href="/profile" class="btn btn-light btn-sm me-3">
                         <i class="fas fa-user me-1"></i>Profile
@@ -87,14 +77,31 @@
         <!-- Dashboard Content -->
         <div class="container-fluid p-4">
             <!-- Welcome Banner -->
-            <div class="welcome-banner mb-4 p-4 rounded-3 text-white">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-crown fa-3x"></i>
+            <div class="welcome-banner admin-banner mb-4 p-4 p-lg-5 rounded-4 text-white">
+                <div class="row align-items-center g-4">
+                    <div class="col-lg-8">
+                        <div class="d-inline-flex align-items-center gap-2 badge bg-light text-primary rounded-pill px-3 py-2 mb-3">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Administrator access</span>
+                        </div>
+                        <h3 class="mb-2 fw-bold">Welcome back, <span th:text="${username}">Admin</span>!</h3>
+                        <p class="mb-0 opacity-75">Monitor the library at a glance, jump into the most important workflows, and keep operations running smoothly.</p>
                     </div>
-                    <div class="flex-grow-1 ms-4">
-                        <h3 class="mb-1">Welcome back, <span th:text="${username}">Admin</span>!</h3>
-                        <p class="mb-0 opacity-75">You have full system access and control. Here's your overview.</p>
+                    <div class="col-lg-4">
+                        <div class="banner-summary card border-0 shadow-sm bg-white bg-opacity-10 text-white">
+                            <div class="card-body p-3 p-lg-4">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <span class="text-uppercase small fw-semibold opacity-75">System snapshot</span>
+                                    <span class="badge bg-success">Live</span>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="metric-pill">Users <strong th:text="${totalUsers}">0</strong></span>
+                                    <span class="metric-pill">Books <strong th:text="${totalBooks}">0</strong></span>
+                                    <span class="metric-pill">Loans <strong th:text="${activeLoans}">0</strong></span>
+                                    <span class="metric-pill">Overdue <strong th:text="${overdueReturns}">0</strong></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -165,89 +172,107 @@
 
             <!-- Admin Features -->
             <div class="row g-4">
-                <div class="col-lg-6">
+                <div class="col-lg-7">
                     <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-transparent border-0 pt-4 px-4">
-                            <h5 class="mb-0"><i class="fas fa-tools me-2 text-primary"></i>Administration Tools</h5>
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-bolt me-2 text-primary"></i>Quick Actions</h5>
+                            <span class="badge bg-primary-subtle text-primary">Most used</span>
                         </div>
-                        <div class="card-body px-4">
-                            <div class="list-group list-group-flush">
-                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 d-flex align-items-center py-3">
-                                    <div class="icon-box bg-primary-subtle text-primary rounded-3 p-2 me-3">
-                                        <i class="fas fa-user-plus fa-fw"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <strong>User Management</strong>
-                                        <p class="mb-0 small text-muted">Add, edit, or remove users</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-muted"></i>
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 d-flex align-items-center py-3">
-                                    <div class="icon-box bg-success-subtle text-success rounded-3 p-2 me-3">
-                                        <i class="fas fa-book fa-fw"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <strong>Book Management</strong>
-                                        <p class="mb-0 small text-muted">Manage the library catalog</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-muted"></i>
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 d-flex align-items-center py-3">
-                                    <div class="icon-box bg-warning-subtle text-warning rounded-3 p-2 me-3">
-                                        <i class="fas fa-chart-bar fa-fw"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <strong>System Reports</strong>
-                                        <p class="mb-0 small text-muted">View analytics and reports</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-muted"></i>
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 d-flex align-items-center py-3">
-                                    <div class="icon-box bg-danger-subtle text-danger rounded-3 p-2 me-3">
-                                        <i class="fas fa-shield-alt fa-fw"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <strong>Security Settings</strong>
-                                        <p class="mb-0 small text-muted">Manage roles and permissions</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-muted"></i>
-                                </a>
+                        <div class="card-body px-4 pb-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <a href="/admin/users" class="quick-action-card text-decoration-none text-body h-100">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="icon-box bg-primary-subtle text-primary rounded-3 p-2">
+                                                <i class="fas fa-user-cog fa-fw"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <strong class="d-block">Manage Users</strong>
+                                                <p class="mb-2 small text-muted">Review accounts, roles, and access permissions.</p>
+                                                <span class="small text-primary fw-semibold">Open directory</span>
+                                            </div>
+                                            <i class="fas fa-arrow-right text-muted action-arrow mt-1"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="/admin/books" class="quick-action-card text-decoration-none text-body h-100">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="icon-box bg-success-subtle text-success rounded-3 p-2">
+                                                <i class="fas fa-book fa-fw"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <strong class="d-block">Book Overview</strong>
+                                                <p class="mb-2 small text-muted">Track inventory, availability, and low stock books.</p>
+                                                <span class="small text-success fw-semibold">Inspect catalog</span>
+                                            </div>
+                                            <i class="fas fa-arrow-right text-muted action-arrow mt-1"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="/admin/reports" class="quick-action-card text-decoration-none text-body h-100">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="icon-box bg-warning-subtle text-warning rounded-3 p-2">
+                                                <i class="fas fa-chart-line fa-fw"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <strong class="d-block">Activity Reports</strong>
+                                                <p class="mb-2 small text-muted">See borrow trends, requests, and overdue items.</p>
+                                                <span class="small text-warning fw-semibold">View reports</span>
+                                            </div>
+                                            <i class="fas fa-arrow-right text-muted action-arrow mt-1"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="/admin/users" class="quick-action-card text-decoration-none text-body h-100">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="icon-box bg-danger-subtle text-danger rounded-3 p-2">
+                                                <i class="fas fa-shield-alt fa-fw"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <strong class="d-block">Security & Access</strong>
+                                                <p class="mb-2 small text-muted">Keep the admin panel secure by managing roles.</p>
+                                                <span class="small text-danger fw-semibold">Review access</span>
+                                            </div>
+                                            <i class="fas fa-arrow-right text-muted action-arrow mt-1"></i>
+                                        </div>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-lg-6">
+                <div class="col-lg-5">
                     <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-transparent border-0 pt-4 px-4">
-                            <h5 class="mb-0"><i class="fas fa-clock me-2 text-primary"></i>Recent Activity</h5>
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-clock me-2 text-primary"></i>System Notes</h5>
+                            <span class="badge bg-light text-secondary">Updated live</span>
                         </div>
-                        <div class="card-body px-4">
-                            <div class="activity-item d-flex mb-3 pb-3 border-bottom">
-                                <div class="flex-shrink-0">
-                                    <span class="badge bg-success rounded-pill px-3 py-2">NEW</span>
+                        <div class="card-body px-4 pb-4">
+                            <div class="snapshot-list d-flex flex-column gap-3">
+                                <div class="snapshot-item d-flex align-items-start gap-3 p-3 rounded-3 bg-light">
+                                    <span class="badge bg-success rounded-pill px-3 py-2">01</span>
+                                    <div>
+                                        <strong class="d-block">User activity is visible</strong>
+                                        <p class="mb-0 small text-muted">Use the user directory to review roles, status, and permissions.</p>
+                                    </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <strong>System initialized</strong>
-                                    <p class="mb-0 small text-muted">Seed data loaded successfully</p>
+                                <div class="snapshot-item d-flex align-items-start gap-3 p-3 rounded-3 bg-light">
+                                    <span class="badge bg-info rounded-pill px-3 py-2">02</span>
+                                    <div>
+                                        <strong class="d-block">Catalog health is easy to track</strong>
+                                        <p class="mb-0 small text-muted">The book overview highlights availability and low stock titles.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="activity-item d-flex mb-3 pb-3 border-bottom">
-                                <div class="flex-shrink-0">
-                                    <span class="badge bg-info rounded-pill px-3 py-2">INFO</span>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <strong>Books catalog ready</strong>
-                                    <p class="mb-0 small text-muted">Sample books have been added</p>
-                                </div>
-                            </div>
-                            <div class="activity-item d-flex">
-                                <div class="flex-shrink-0">
-                                    <span class="badge bg-primary rounded-pill px-3 py-2">SYS</span>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <strong>Roles configured</strong>
-                                    <p class="mb-0 small text-muted">Admin, Librarian, User roles active</p>
+                                <div class="snapshot-item d-flex align-items-start gap-3 p-3 rounded-3 bg-light">
+                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2">03</span>
+                                    <div>
+                                        <strong class="d-block">Reports surface urgent attention</strong>
+                                        <p class="mb-0 small text-muted">Open activity reports to review requests, returns, and overdue items.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
