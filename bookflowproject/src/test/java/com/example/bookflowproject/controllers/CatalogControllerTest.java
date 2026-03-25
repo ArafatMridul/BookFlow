@@ -137,6 +137,30 @@ class CatalogControllerTest {
     class RequestBorrow {
 
         @Test
+        void shouldRedirectToLoginWhenBorrowRequestIsAnonymous() {
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+
+            String view = catalogController.requestBorrow(1L, null, redirectAttributes);
+
+            assertEquals("redirect:/login", view);
+            assertEquals("Please log in first.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectBorrowRequestWhenUserOrBookMissing() {
+            when(userRepository.findByUsername("reader")).thenReturn(Optional.empty());
+            when(bookRepository.findById(1L)).thenReturn(Optional.empty());
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.requestBorrow(1L, authentication("reader", "USER"), redirectAttributes);
+
+            assertEquals("redirect:/user/catalog", view);
+            assertEquals("Unable to process request for this book.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
         void shouldCreateBorrowRequest() {
             User user = user("reader");
             user.setId(5L);
@@ -205,6 +229,95 @@ class CatalogControllerTest {
             assertEquals("dashboard/my-borrowings", view);
             assertEquals("reader", model.getAttribute("username"));
             assertFalse(((List<?>) model.getAttribute("borrowings")).isEmpty());
+        }
+
+        @Test
+        void shouldReturnWishlistPageWithWishlistBooks() {
+            Book wishlistBook = book(12L, "Working Effectively with Legacy Code");
+            User user = user("reader", wishlistBook);
+            when(userRepository.findByUsername("reader")).thenReturn(Optional.of(user));
+
+            Model model = new ExtendedModelMap();
+            String view = catalogController.viewWishlist(model, authentication("reader", "USER"));
+
+            assertEquals("dashboard/wishlist", view);
+            assertEquals("reader", model.getAttribute("username"));
+            assertEquals(user.getWishlistBooks(), model.getAttribute("wishlistBooks"));
+        }
+
+        @Test
+        void shouldRemoveBookFromWishlistAndRespectRedirectSource() {
+            Book wishlistBook = book(13L, "Test-Driven Development");
+            User user = user("reader", wishlistBook);
+            when(userRepository.findByUsername("reader")).thenReturn(Optional.of(user));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.removeFromWishlist(13L, authentication("reader", "USER"), "wishlist", redirectAttributes);
+
+            assertEquals("redirect:/user/wishlist", view);
+            assertEquals("Book removed from your wishlist.", redirectAttributes.getFlashAttributes().get("successMsg"));
+            assertFalse(user.getWishlistBooks().contains(wishlistBook));
+            verify(userRepository).save(user);
+        }
+
+        @Test
+        void shouldRequestReturnForBorrowedItem() {
+            User user = user("reader");
+            Borrowing borrowing = borrowing(book(9L, "Refactoring"), "BORROWED");
+            borrowing.setUser(user);
+
+            when(borrowingRepository.findById(15L)).thenReturn(Optional.of(borrowing));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.requestReturn(15L, authentication("reader", "USER"), redirectAttributes);
+
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("Return request sent to the librarian.", redirectAttributes.getFlashAttributes().get("successMsg"));
+            verify(borrowingRepository).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectReturnWhenBorrowingBelongsToAnotherUser() {
+            User otherUser = user("another-reader");
+            Borrowing borrowing = borrowing(book(10L, "Design Patterns"), "BORROWED");
+            borrowing.setUser(otherUser);
+
+            when(borrowingRepository.findById(16L)).thenReturn(Optional.of(borrowing));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.requestReturn(16L, authentication("reader", "USER"), redirectAttributes);
+
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("Borrowing record not found.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectReturnWhenStatusIsNotEligible() {
+            User user = user("reader");
+            Borrowing borrowing = borrowing(book(11L, "Clean Architecture"), "REQUESTED");
+            borrowing.setUser(user);
+
+            when(borrowingRepository.findById(17L)).thenReturn(Optional.of(borrowing));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.requestReturn(17L, authentication("reader", "USER"), redirectAttributes);
+
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("This item is not eligible for return request.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRedirectToLoginWhenRequestReturnIsAnonymous() {
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+
+            String view = catalogController.requestReturn(18L, null, redirectAttributes);
+
+            assertEquals("redirect:/login", view);
+            assertEquals("Please log in first.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).findById(any(Long.class));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
         }
     }
 

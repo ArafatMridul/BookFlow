@@ -17,16 +17,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -43,6 +46,9 @@ class AdminControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private AdminController adminController;
 
     @MockitoBean
     private UserRepository userRepository;
@@ -101,6 +107,55 @@ class AdminControllerTest {
                     .andExpect(flash().attribute("successMsg", "User account enabled."));
 
             verify(userRepository).save(reader);
+        }
+
+        @Test
+        @WithMockUser(username = "admin", roles = {"ADMIN"})
+        void shouldShowErrorWhenToggleUserMissing() throws Exception {
+            when(userRepository.findById(404L)).thenReturn(Optional.empty());
+
+            mockMvc.perform(post("/admin/users/404/toggle-enabled"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/admin/users"))
+                    .andExpect(flash().attribute("errorMsg", "User not found."));
+
+            verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
+        }
+
+        @Test
+        void shouldBlockSelfDisableAttempt() throws Exception {
+            User admin = user(1L, "admin", "admin@bookflow.com", true, "ADMIN");
+            when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = adminController.toggleUserEnabled(
+                1L,
+                new UsernamePasswordAuthenticationToken("admin", "password"),
+                redirectAttributes
+            );
+
+            org.junit.jupiter.api.Assertions.assertEquals("redirect:/admin/users", view);
+            org.junit.jupiter.api.Assertions.assertEquals(
+                "You cannot disable your own admin account.",
+                redirectAttributes.getFlashAttributes().get("errorMsg")
+            );
+            verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
+        }
+
+        @Test
+        @WithMockUser(username = "admin", roles = {"ADMIN"})
+        void shouldFilterUsersBySearchQuery() throws Exception {
+            when(userRepository.findAll()).thenReturn(List.of(
+                    user(1L, "admin", "admin@bookflow.com", true, "ADMIN"),
+                    user(2L, "librarian", "librarian@bookflow.com", true, "LIBRARIAN"),
+                    user(3L, "reader", "reader@bookflow.com", true, "USER")
+            ));
+
+            mockMvc.perform(get("/admin/users").param("search", "reader"))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("admin/users"))
+                    .andExpect(model().attribute("search", "reader"))
+                    .andExpect(model().attribute("totalUsers", 1));
         }
     }
 
@@ -162,6 +217,20 @@ class AdminControllerTest {
                     .andExpect(model().attribute("lowStockBooks", 1L))
                     .andExpect(model().attribute("availableBooks", 2L));
         }
+
+                @Test
+                @WithMockUser(username = "admin", roles = {"ADMIN"})
+                void shouldUseSearchOnBooksPage() throws Exception {
+                    when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase("code", "code"))
+                        .thenReturn(List.of(book(2L, "Clean Code", "Robert C. Martin", 1, 3)));
+
+                    mockMvc.perform(get("/admin/books").param("search", "code"))
+                        .andExpect(status().isOk())
+                        .andExpect(view().name("admin/books"))
+                        .andExpect(model().attribute("search", "code"))
+                        .andExpect(model().attribute("lowStockBooks", 1L))
+                        .andExpect(model().attribute("availableBooks", 1L));
+                }
     }
 
     private User user(Long id, String username, String email, boolean enabled, String roleName) {
