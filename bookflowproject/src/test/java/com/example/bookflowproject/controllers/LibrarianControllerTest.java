@@ -4,8 +4,11 @@ import com.example.bookflowproject.config.JwtProperties;
 import com.example.bookflowproject.controller.LibrarianController;
 import com.example.bookflowproject.entity.Book;
 import com.example.bookflowproject.entity.Borrowing;
+import com.example.bookflowproject.entity.Role;
+import com.example.bookflowproject.entity.User;
 import com.example.bookflowproject.repository.BookRepository;
 import com.example.bookflowproject.repository.BorrowingRepository;
+import com.example.bookflowproject.repository.UserRepository;
 import com.example.bookflowproject.security.JwtAuthenticationFilter;
 import com.example.bookflowproject.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -47,6 +51,9 @@ class LibrarianControllerTest {
 
     @MockitoBean
     private BookRepository bookRepository;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
@@ -77,6 +84,123 @@ class LibrarianControllerTest {
                     .andExpect(view().name("dashboard/librarian-borrowings"))
                     .andExpect(model().attribute("username", "librarian"))
                     .andExpect(model().attributeExists("requestedBorrowings", "activeBorrowings"));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /librarian/books/manage")
+    class ManageBooks {
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldReturnBookManagementPage() throws Exception {
+            when(bookRepository.findAll()).thenReturn(List.of(book()));
+
+            mockMvc.perform(get("/librarian/books/manage"))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("dashboard/librarian-books"))
+                    .andExpect(model().attribute("username", "librarian"))
+                    .andExpect(model().attributeExists("books", "availableBooks"));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldLoadSelectedBookForEditing() throws Exception {
+            when(bookRepository.findAll()).thenReturn(List.of(book()));
+            when(bookRepository.findById(1L)).thenReturn(Optional.of(book()));
+
+            mockMvc.perform(get("/librarian/books/manage").param("bookId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("dashboard/librarian-books"))
+                    .andExpect(model().attributeExists("selectedBook"));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldUpdateExistingBook() throws Exception {
+            Book existing = book();
+            existing.setId(1L);
+            when(bookRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            mockMvc.perform(post("/librarian/books/1/update")
+                            .param("title", "Effective Java, 3rd Edition")
+                            .param("author", "Joshua Bloch")
+                            .param("isbn", "9780134685991")
+                            .param("totalCopies", "4")
+                            .param("availableCopies", "2"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/manage?bookId=1"))
+                    .andExpect(flash().attribute("successMsg", "Book updated successfully."));
+
+            verify(bookRepository).save(any(Book.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldDeleteBookWhenNoBorrowingRecordsExist() throws Exception {
+            Book existing = book();
+            existing.setId(1L);
+            when(bookRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(borrowingRepository.existsByBookId(1L)).thenReturn(false);
+
+            mockMvc.perform(post("/librarian/books/1/delete"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/manage"))
+                    .andExpect(flash().attribute("successMsg", "Book deleted successfully."));
+
+            verify(bookRepository).delete(existing);
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /librarian/books/add")
+    class AddBookForm {
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldReturnAddBookForm() throws Exception {
+            mockMvc.perform(get("/librarian/books/add"))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("dashboard/librarian-books-add"))
+                    .andExpect(model().attributeExists("bookForm"));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /librarian/books/add")
+    class AddBook {
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldSaveNewBook() throws Exception {
+            mockMvc.perform(post("/librarian/books/add")
+                            .param("title", "Clean Architecture")
+                            .param("author", "Robert C. Martin")
+                            .param("isbn", "9780134494166")
+                            .param("totalCopies", "3")
+                            .param("availableCopies", "3"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/manage"))
+                    .andExpect(flash().attribute("successMsg", "Book added successfully."));
+
+            verify(bookRepository).save(any(Book.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /librarian/patrons")
+    class SearchPatrons {
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldReturnPatronSearchPage() throws Exception {
+            when(userRepository.findAll()).thenReturn(List.of(user()));
+
+            mockMvc.perform(get("/librarian/patrons"))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("dashboard/librarian-patrons"))
+                    .andExpect(model().attribute("username", "librarian"))
+                    .andExpect(model().attributeExists("patrons"));
         }
     }
 
@@ -147,5 +271,24 @@ class LibrarianControllerTest {
         borrowing.setBorrowDate(LocalDate.now());
         borrowing.setDueDate(LocalDate.now().plusDays(14));
         return borrowing;
+    }
+
+    private Book book() {
+        Book book = new Book();
+        book.setTitle("Effective Java");
+        book.setAuthor("Joshua Bloch");
+        book.setTotalCopies(1);
+        book.setAvailableCopies(1);
+        return book;
+    }
+
+    private User user() {
+        User user = new User();
+        user.setUsername("john");
+        user.setEmail("john@example.com");
+        Role role = new Role();
+        role.setName("USER");
+        user.setRoles(Set.of(role));
+        return user;
     }
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,14 +14,30 @@
         <div class="sidebar-header p-3 text-center">
             <i class="fas fa-book-open fa-2x mb-2"></i>
             <h5 class="mb-0">BookFlow</h5>
-            <small class="text-muted">Librarian Panel</small>
+            <small class="text-muted">Librarian Portal</small>
         </div>
         <hr class="text-secondary mx-3">
         <ul class="nav flex-column px-2">
             <li class="nav-item"><a class="nav-link text-white-50" href="/librarian/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link active text-white" href="/librarian/borrowings"><i class="fas fa-hand-holding-heart me-2"></i>Borrow Requests</a></li>
-            <li class="nav-item"><a class="nav-link text-white-50" href="/user/catalog"><i class="fas fa-images me-2"></i>See Catalog</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/librarian/books/manage"><i class="fas fa-book me-2"></i>Manage Books</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/librarian/books/add"><i class="fas fa-circle-plus me-2"></i>Add Books</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/librarian/patrons"><i class="fas fa-users me-2"></i>Search Patrons</a></li>
+            <li class="nav-item"><a class="nav-link active text-white" href="/librarian/borrowings"><i class="fas fa-hand-holding-heart me-2"></i>Borrowing Management</a></li>
         </ul>
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fa-2x me-2"></i>
+                <div>
+                    <small class="d-block fw-bold" th:text="${username}">Librarian</small>
+                    <span class="badge bg-info">Librarian</span>
+                </div>
+            </div>
+            <form th:action="@{/logout}" method="post" class="mt-3">
+                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </form>
+        </div>
     </div>
 
     <div class="main-content flex-grow-1">

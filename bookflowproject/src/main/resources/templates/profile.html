@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
   <meta charset="UTF-8">
@@ -39,14 +39,6 @@
               <a class="dropdown-item active" href="/profile">
                 <i class="fas fa-user me-2"></i>Profile
               </a>
-            </li>
-            <li><hr class="dropdown-divider"></li>
-            <li>
-              <form th:action="@{/logout}" method="post">
-                <button type="submit" class="dropdown-item">
-                  <i class="fas fa-sign-out-alt me-2"></i>Logout
-                </button>
-              </form>
             </li>
           </ul>
         </li>
@@ -92,28 +84,28 @@
           <form>
             <div class="row mb-3">
               <div class="col-md-6">
-                <label class="form-label">First Name</label>
-                <input type="text" class="form-control" value="John">
+                <label class="form-label" for="firstName">First Name</label>
+                <input id="firstName" type="text" class="form-control" value="John">
               </div>
               <div class="col-md-6">
-                <label class="form-label">Last Name</label>
-                <input type="text" class="form-control" value="Doe">
+                <label class="form-label" for="lastName">Last Name</label>
+                <input id="lastName" type="text" class="form-control" value="Doe">
               </div>
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-control" value="john.doe@example.com">
+              <label class="form-label" for="email">Email</label>
+              <input id="email" type="email" class="form-control" value="john.doe@example.com">
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Phone</label>
-              <input type="tel" class="form-control" value="(555) 123-4567">
+              <label class="form-label" for="phone">Phone</label>
+              <input id="phone" type="tel" class="form-control" value="(555) 123-4567">
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Address</label>
-              <textarea class="form-control" rows="3">123 Main Street, City, State 12345</textarea>
+              <label class="form-label" for="address">Address</label>
+              <textarea id="address" class="form-control" rows="3">123 Main Street, City, State 12345</textarea>
             </div>
 
             <hr>
@@ -121,18 +113,18 @@
             <h6 class="mb-3">Change Password</h6>
 
             <div class="mb-3">
-              <label class="form-label">Current Password</label>
-              <input type="password" class="form-control">
+              <label class="form-label" for="currentPassword">Current Password</label>
+              <input id="currentPassword" type="password" class="form-control">
             </div>
 
             <div class="mb-3">
-              <label class="form-label">New Password</label>
-              <input type="password" class="form-control">
+              <label class="form-label" for="newPassword">New Password</label>
+              <input id="newPassword" type="password" class="form-control">
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Confirm New Password</label>
-              <input type="password" class="form-control">
+              <label class="form-label" for="confirmPassword">Confirm New Password</label>
+              <input id="confirmPassword" type="password" class="form-control">
             </div>
 
             <button type="submit" class="btn btn-primary">
@@ -143,6 +135,14 @@
       </div>
     </div>
   </div>
+</div>
+
+<div class="container text-center mb-4">
+  <form th:action="@{/logout}" method="post">
+    <button type="submit" class="btn btn-outline-primary">
+      <i class="fas fa-sign-out-alt me-2"></i>Logout
+    </button>
+  </form>
 </div>
 
 <footer class="text-white mt-5">

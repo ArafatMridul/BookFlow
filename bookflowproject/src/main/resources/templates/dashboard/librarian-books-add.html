@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Book - BookFlow</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div class="sidebar bg-dark text-white" id="sidebar">
+        <div class="sidebar-header p-3 text-center">
+            <i class="fas fa-book-open fa-2x mb-2"></i>
+            <h5 class="mb-0">BookFlow</h5>
+            <small class="text-muted">Librarian Portal</small>
+        </div>
+        <hr class="text-secondary mx-3">
+        <ul class="nav flex-column px-2">
+            <li class="nav-item"><a class="nav-link text-white-50" href="/librarian/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/librarian/books/manage"><i class="fas fa-book me-2"></i>Manage Books</a></li>
+            <li class="nav-item"><a class="nav-link active text-white" href="/librarian/books/add"><i class="fas fa-circle-plus me-2"></i>Add Books</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/librarian/patrons"><i class="fas fa-users me-2"></i>Search Patrons</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/librarian/borrowings"><i class="fas fa-hand-holding-heart me-2"></i>Borrowing Management</a></li>
+        </ul>
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fa-2x me-2"></i>
+                <div>
+                    <small class="d-block fw-bold" th:text="${username}">Librarian</small>
+                    <span class="badge bg-info">Librarian</span>
+                </div>
+            </div>
+            <form th:action="@{/logout}" method="post" class="mt-3">
+                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-content flex-grow-1">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+            <div class="container-fluid">
+                <button class="btn btn-link text-dark" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+                <span class="navbar-text fw-bold text-success">Add Book</span>
+                <span class="navbar-text" th:text="${username}">Librarian</span>
+            </div>
+        </nav>
+
+        <div class="container-fluid p-4">
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-triangle-exclamation me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="mb-0"><i class="fas fa-circle-plus me-2 text-success"></i>Create New Book</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            <form th:action="@{/librarian/books/add}" method="post" th:object="${bookForm}">
+                                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="book-title" class="form-label">Title</label>
+                                        <input id="book-title" type="text" class="form-control" th:field="*{title}" placeholder="Book title" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="book-author" class="form-label">Author</label>
+                                        <input id="book-author" type="text" class="form-control" th:field="*{author}" placeholder="Author name" required>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-0">
+                                    <div class="col-md-6">
+                                        <label for="book-isbn" class="form-label">ISBN</label>
+                                        <input id="book-isbn" type="text" class="form-control" th:field="*{isbn}" placeholder="ISBN">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="book-publisher" class="form-label">Publisher</label>
+                                        <input id="book-publisher" type="text" class="form-control" th:field="*{publisher}" placeholder="Publisher">
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-0">
+                                    <div class="col-md-6">
+                                        <label for="book-year" class="form-label">Publication Year</label>
+                                        <input id="book-year" type="number" class="form-control" th:field="*{publicationYear}" placeholder="2026">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="book-cover" class="form-label">Cover Image URL</label>
+                                        <input id="book-cover" type="text" class="form-control" th:field="*{coverImageUrl}" placeholder="https://...">
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-0">
+                                    <div class="col-md-6">
+                                        <label for="book-total-copies" class="form-label">Total Copies</label>
+                                        <input id="book-total-copies" type="number" class="form-control" th:field="*{totalCopies}" min="1" value="1" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="book-available-copies" class="form-label">Available Copies</label>
+                                        <input id="book-available-copies" type="number" class="form-control" th:field="*{availableCopies}" min="0" value="1">
+                                    </div>
+                                </div>
+
+                                <div class="d-grid mt-4">
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-save me-2"></i>Add Book
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
+

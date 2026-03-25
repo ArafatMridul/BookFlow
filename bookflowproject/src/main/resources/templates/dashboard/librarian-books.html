@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Manage Books - BookFlow</title>
+	<link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+	<link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+	<div class="sidebar bg-dark text-white" id="sidebar">
+		<div class="sidebar-header p-3 text-center">
+			<i class="fas fa-book-open fa-2x mb-2"></i>
+			<h5 class="mb-0">BookFlow</h5>
+			<small class="text-muted">Librarian Portal</small>
+		</div>
+		<hr class="text-secondary mx-3">
+		<ul class="nav flex-column px-2">
+			<li class="nav-item"><a class="nav-link text-white-50" href="/librarian/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+			<li class="nav-item"><a class="nav-link active text-white" href="/librarian/books/manage"><i class="fas fa-book me-2"></i>Manage Books</a></li>
+			<li class="nav-item"><a class="nav-link text-white-50" href="/librarian/books/add"><i class="fas fa-circle-plus me-2"></i>Add Books</a></li>
+			<li class="nav-item"><a class="nav-link text-white-50" href="/librarian/patrons"><i class="fas fa-users me-2"></i>Search Patrons</a></li>
+			<li class="nav-item"><a class="nav-link text-white-50" href="/librarian/borrowings"><i class="fas fa-hand-holding-heart me-2"></i>Borrowing Management</a></li>
+		</ul>
+		<div class="sidebar-footer p-3 mt-auto">
+			<div class="d-flex align-items-center">
+				<i class="fas fa-user-circle fa-2x me-2"></i>
+				<div>
+					<small class="d-block fw-bold" th:text="${username}">Librarian</small>
+					<span class="badge bg-info">Librarian</span>
+				</div>
+			</div>
+			<form th:action="@{/logout}" method="post" class="mt-3">
+				<button type="submit" class="btn btn-outline-light btn-sm w-100">
+					<i class="fas fa-sign-out-alt me-2"></i>Logout
+				</button>
+			</form>
+		</div>
+	</div>
+
+	<div class="main-content flex-grow-1">
+		<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+			<div class="container-fluid">
+				<button class="btn btn-link text-dark" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+				<span class="navbar-text fw-bold text-primary">Manage Books</span>
+				<span class="navbar-text" th:text="${username}">Librarian</span>
+			</div>
+		</nav>
+
+		<div class="container-fluid p-4">
+			<div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show" role="alert">
+				<i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}"></span>
+				<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+			</div>
+			<div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show" role="alert">
+				<i class="fas fa-triangle-exclamation me-2"></i><span th:text="${errorMsg}"></span>
+				<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+			</div>
+
+			<div class="row g-4 mb-4">
+				<div class="col-lg-12">
+					<div class="card border-0 shadow-sm">
+						<div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+							<h5 class="mb-0"><i class="fas fa-list me-2 text-primary"></i>Select a Book to Edit</h5>
+							<span class="badge bg-primary" th:text="${books != null ? books.size() : 0}">0</span>
+						</div>
+						<div class="card-body px-4 pb-4">
+							<form th:action="@{/librarian/books/manage}" method="get" class="row g-2 align-items-end">
+								<div class="col-md-8">
+									<label for="book-picker" class="form-label">Available books</label>
+									<select id="book-picker" name="bookId" class="form-select">
+										<option value="">Choose a book to load into the edit form</option>
+										<option th:each="book : ${availableBooks}" th:value="${book.id}"
+												th:text="${book.title + ' — ' + book.author}">
+										</option>
+									</select>
+								</div>
+								<div class="col-md-4 d-grid">
+									<button type="submit" class="btn btn-outline-primary">
+										<i class="fas fa-eye me-2"></i>Load Book
+									</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row g-4">
+				<div class="col-lg-5">
+					<div class="card border-0 shadow-sm h-100">
+						<div class="card-header bg-transparent border-0 pt-4 px-4">
+							<h5 class="mb-0"><i class="fas fa-pen-to-square me-2 text-success"></i>Edit Selected Book</h5>
+						</div>
+						<div class="card-body px-4 pb-4">
+							<div th:if="${selectedBook == null}" class="alert alert-info">
+								Pick a book above to edit its details.
+							</div>
+
+							<form th:if="${selectedBook != null}" th:action="@{/librarian/books/{id}/update(id=${selectedBook.id})}" method="post" th:object="${selectedBook}">
+								<input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+								<div class="mb-3">
+									<label for="edit-title" class="form-label">Title</label>
+									<input id="edit-title" type="text" class="form-control" th:field="*{title}" required>
+								</div>
+								<div class="mb-3">
+									<label for="edit-author" class="form-label">Author</label>
+									<input id="edit-author" type="text" class="form-control" th:field="*{author}" required>
+								</div>
+								<div class="mb-3">
+									<label for="edit-isbn" class="form-label">ISBN</label>
+									<input id="edit-isbn" type="text" class="form-control" th:field="*{isbn}">
+								</div>
+								<div class="mb-3">
+									<label for="edit-publisher" class="form-label">Publisher</label>
+									<input id="edit-publisher" type="text" class="form-control" th:field="*{publisher}">
+								</div>
+								<div class="mb-3">
+									<label for="edit-year" class="form-label">Publication Year</label>
+									<input id="edit-year" type="number" class="form-control" th:field="*{publicationYear}">
+								</div>
+								<div class="mb-3">
+									<label for="edit-cover" class="form-label">Cover Image URL</label>
+									<input id="edit-cover" type="text" class="form-control" th:field="*{coverImageUrl}">
+								</div>
+								<div class="row g-3">
+									<div class="col-md-6">
+										<label for="edit-total" class="form-label">Total Copies</label>
+										<input id="edit-total" type="number" class="form-control" th:field="*{totalCopies}" min="1">
+									</div>
+									<div class="col-md-6">
+										<label for="edit-available" class="form-label">Available Copies</label>
+										<input id="edit-available" type="number" class="form-control" th:field="*{availableCopies}" min="0">
+									</div>
+								</div>
+								<div class="d-grid mt-4">
+									<button type="submit" class="btn btn-success btn-lg">
+										<i class="fas fa-save me-2"></i>Update Book
+									</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-lg-7">
+					<div class="card border-0 shadow-sm h-100">
+						<div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+							<h5 class="mb-0"><i class="fas fa-book me-2 text-primary"></i>Inventory</h5>
+							<a href="/librarian/books/add" class="btn btn-sm btn-outline-success">
+								<i class="fas fa-circle-plus me-1"></i>Add New Book
+							</a>
+						</div>
+						<div class="card-body px-4 pb-4">
+							<form th:action="@{/librarian/books/manage}" method="get" class="d-flex gap-2 mb-4">
+								<label for="book-search" class="visually-hidden">Search books</label>
+								<input id="book-search" type="text" name="search" class="form-control" placeholder="Search by title or author" th:value="${search}">
+								<button type="submit" class="btn btn-outline-primary">Search</button>
+								<a href="/librarian/books/manage" class="btn btn-outline-secondary">Clear</a>
+							</form>
+
+							<div class="table-responsive">
+								<table class="table align-middle">
+									<thead>
+									<tr>
+										<th>Title</th>
+										<th>Author</th>
+										<th>Copies</th>
+										<th>Status</th>
+										<th class="text-end">Actions</th>
+									</tr>
+									</thead>
+									<tbody>
+									<tr th:each="book : ${books}">
+										<td class="fw-semibold" th:text="${book.title}">Title</td>
+										<td th:text="${book.author}">Author</td>
+										<td th:text="${book.availableCopies + ' / ' + book.totalCopies}">0 / 0</td>
+										<td>
+											<span class="badge bg-success" th:if="${book.availableCopies != null and book.availableCopies > 0}">Available</span>
+											<span class="badge bg-danger" th:unless="${book.availableCopies != null and book.availableCopies > 0}">Unavailable</span>
+										</td>
+										<td class="text-end">
+											<div class="d-flex gap-2 justify-content-end">
+												<a th:href="@{/librarian/books/manage(bookId=${book.id})}" class="btn btn-sm btn-outline-primary">
+													<i class="fas fa-pen me-1"></i>Edit
+												</a>
+												<form th:action="@{/librarian/books/{id}/delete(id=${book.id})}" method="post">
+													<input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+													<button type="submit" class="btn btn-sm btn-outline-danger"
+															onclick="return confirm('Delete this book?')">
+														<i class="fas fa-trash me-1"></i>Delete
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+									<tr th:if="${books == null or #lists.isEmpty(books)}">
+										<td colspan="5" class="text-center text-muted py-4">No books found.</td>
+									</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
+
+

@@ -2,6 +2,7 @@ package com.example.bookflowproject.controllers;
 
 import com.example.bookflowproject.controller.DashboardController;
 import com.example.bookflowproject.config.JwtProperties;
+import com.example.bookflowproject.entity.Borrowing;
 import com.example.bookflowproject.security.JwtAuthenticationFilter;
 import com.example.bookflowproject.security.JwtTokenProvider;
 import com.example.bookflowproject.repository.BookRepository;
@@ -17,6 +18,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -96,8 +98,12 @@ class DashboardControllerTest {
         @DisplayName("should return librarian dashboard with stats")
         void shouldReturnLibrarianDashboard() throws Exception {
             when(bookRepository.count()).thenReturn(50L);
-            when(borrowingRepository.countByStatus("BORROWED")).thenReturn(8L);
-            when(borrowingRepository.countByStatus("OVERDUE")).thenReturn(1L);
+            when(borrowingRepository.findByStatusInOrderByBorrowDateDesc(java.util.List.of("BORROWED", "OVERDUE")))
+                    .thenReturn(Collections.nCopies(8, new Borrowing()));
+            when(borrowingRepository.findByStatusInOrderByBorrowDateDesc(java.util.List.of("RETURN_REQUESTED")))
+                    .thenReturn(Collections.nCopies(2, new Borrowing()));
+            when(borrowingRepository.findByStatusInOrderByBorrowDateDesc(java.util.List.of("OVERDUE")))
+                    .thenReturn(Collections.nCopies(1, new Borrowing()));
 
             mockMvc.perform(get("/librarian/dashboard"))
                     .andExpect(status().isOk())
@@ -105,6 +111,7 @@ class DashboardControllerTest {
                     .andExpect(model().attribute("username", "librarian"))
                     .andExpect(model().attribute("totalBooks", 50L))
                     .andExpect(model().attribute("currentlyBorrowed", 8L))
+                    .andExpect(model().attribute("returnRequested", 2L))
                     .andExpect(model().attribute("overdueReturns", 1L));
         }
     }
@@ -114,29 +121,29 @@ class DashboardControllerTest {
     class UserDashboard {
 
         @Test
-        @WithMockUser(username = "john", roles = {"USER"})
+        @WithMockUser(roles = {"USER"})
         @DisplayName("should return user dashboard with personal stats")
         void shouldReturnUserDashboard() throws Exception {
             when(bookRepository.count()).thenReturn(50L);
-            when(borrowingRepository.countByUserUsernameAndStatus("john", "BORROWED")).thenReturn(3L);
-            when(borrowingRepository.countByUserUsernameAndStatus("john", "RETURNED")).thenReturn(7L);
+            when(borrowingRepository.countByUserUsernameAndStatus("user", "BORROWED")).thenReturn(3L);
+            when(borrowingRepository.countByUserUsernameAndStatus("user", "RETURNED")).thenReturn(7L);
 
             mockMvc.perform(get("/user/dashboard"))
                     .andExpect(status().isOk())
                     .andExpect(view().name("dashboard/user"))
-                    .andExpect(model().attribute("username", "john"))
+                    .andExpect(model().attribute("username", "user"))
                     .andExpect(model().attribute("totalBooks", 50L))
                     .andExpect(model().attribute("myBorrowings", 3L))
                     .andExpect(model().attribute("myReturned", 7L));
         }
 
         @Test
-        @WithMockUser(username = "jane", roles = {"USER"})
+        @WithMockUser(roles = {"USER"})
         @DisplayName("should return zero borrowings for new user")
         void shouldReturnZeroBorrowingsForNewUser() throws Exception {
             when(bookRepository.count()).thenReturn(10L);
-            when(borrowingRepository.countByUserUsernameAndStatus("jane", "BORROWED")).thenReturn(0L);
-            when(borrowingRepository.countByUserUsernameAndStatus("jane", "RETURNED")).thenReturn(0L);
+            when(borrowingRepository.countByUserUsernameAndStatus("user", "BORROWED")).thenReturn(0L);
+            when(borrowingRepository.countByUserUsernameAndStatus("user", "RETURNED")).thenReturn(0L);
 
             mockMvc.perform(get("/user/dashboard"))
                     .andExpect(status().isOk())
