@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>Login - BookFlow</title>
   <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
@@ -19,9 +19,9 @@
         <div class="card-body p-4">
           <h4 class="text-center mb-4">Welcome Back!</h4>
 
-          <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+          <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fas fa-exclamation-circle me-2"></i>
-            Invalid username or password
+            <span th:text="${error}">Invalid username or password</span>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
 

@@ -19,7 +19,9 @@ public class AuthController {
                             @RequestParam(value = "registered", required = false) String registered,
                             Model model) {
         if (error != null) {
-            model.addAttribute("error", "Invalid username or password");
+            model.addAttribute("error", "disabled".equalsIgnoreCase(error)
+                    ? "Your account is disabled. Please contact an administrator."
+                    : "Invalid username or password");
         }
         if (registered != null) {
             model.addAttribute("success", "Registration successful! Please login.");
