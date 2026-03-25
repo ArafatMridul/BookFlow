@@ -64,6 +64,15 @@ class AuthControllerTest {
         }
 
         @Test
+        @DisplayName("should show disabled-account message when error indicates disabled user")
+        void shouldShowDisabledAccountMessage() throws Exception {
+            mockMvc.perform(get("/login").param("error", "disabled"))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("auth/login"))
+                    .andExpect(model().attribute("error", "Your account is disabled. Please contact an administrator."));
+        }
+
+        @Test
         @DisplayName("should show success message when registered param present")
         void shouldShowSuccessMessage() throws Exception {
             mockMvc.perform(get("/login").param("registered", "true"))

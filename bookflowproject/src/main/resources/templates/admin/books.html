@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Overview - BookFlow</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/webjars/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div class="sidebar bg-dark text-white" id="sidebar">
+        <div class="sidebar-header p-3 text-center">
+            <i class="fas fa-book-open fa-2x mb-2"></i>
+            <h5 class="mb-0">BookFlow</h5>
+            <small class="text-muted">Admin Panel</small>
+        </div>
+        <hr class="text-secondary mx-3">
+        <ul class="nav flex-column px-2">
+            <li class="nav-item"><a class="nav-link text-white-50" href="/admin/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/admin/users"><i class="fas fa-users me-2"></i>Manage Users</a></li>
+            <li class="nav-item"><a class="nav-link text-white-50" href="/admin/reports"><i class="fas fa-chart-bar me-2"></i>Reports</a></li>
+            <li class="nav-item"><a class="nav-link active text-white" href="/admin/books"><i class="fas fa-book me-2"></i>Book Overview</a></li>
+        </ul>
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fa-2x me-2"></i>
+                <div>
+                    <small class="d-block fw-bold" th:text="${username}">Admin</small>
+                    <span class="badge bg-danger">Admin</span>
+                </div>
+            </div>
+            <form th:action="@{/logout}" method="post" class="mt-3">
+                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-content flex-grow-1">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+            <div class="container-fluid">
+                <button class="btn btn-link text-dark" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+                <span class="navbar-text fw-bold text-primary">Book Overview</span>
+                <div class="d-flex align-items-center">
+                    <a href="/profile" class="btn btn-light btn-sm me-3"><i class="fas fa-user me-1"></i>Profile</a>
+                    <span class="navbar-text" th:text="${username}">Admin</span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid p-4">
+            <div class="row g-4 mb-4">
+                <div class="col-md-4"><div class="card stat-card border-0 shadow-sm h-100"><div class="card-body"><h6 class="text-muted text-uppercase small fw-bold mb-1">Total Books</h6><h3 class="mb-0 fw-bold" th:text="${books != null ? books.size() : 0}">0</h3></div></div></div>
+                <div class="col-md-4"><div class="card stat-card border-0 shadow-sm h-100"><div class="card-body"><h6 class="text-muted text-uppercase small fw-bold mb-1">Available Books</h6><h3 class="mb-0 fw-bold" th:text="${availableBooks}">0</h3></div></div></div>
+                <div class="col-md-4"><div class="card stat-card border-0 shadow-sm h-100"><div class="card-body"><h6 class="text-muted text-uppercase small fw-bold mb-1">Low Stock</h6><h3 class="mb-0 fw-bold" th:text="${lowStockBooks}">0</h3></div></div></div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-book me-2 text-primary"></i>Inventory Overview</h5>
+                    <span class="badge bg-primary" th:text="${books != null ? books.size() : 0}">0</span>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <form th:action="@{/admin/books}" method="get" class="d-flex gap-2 mb-4">
+                        <label for="book-search" class="visually-hidden">Search books</label>
+                        <input id="book-search" type="text" name="search" class="form-control" placeholder="Search by title or author" th:value="${search}">
+                        <button type="submit" class="btn btn-outline-primary">Search</button>
+                        <a href="/admin/books" class="btn btn-outline-secondary">Clear</a>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Copies</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="book : ${books}">
+                                <td class="fw-semibold" th:text="${book.title}">Title</td>
+                                <td th:text="${book.author}">Author</td>
+                                <td th:text="${book.availableCopies + ' / ' + book.totalCopies}">0 / 0</td>
+                                <td>
+                                    <span class="badge bg-success" th:if="${book.availableCopies != null and book.availableCopies > 0}">Available</span>
+                                    <span class="badge bg-danger" th:unless="${book.availableCopies != null and book.availableCopies > 0}">Unavailable</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning text-dark" th:if="${book.availableCopies != null and book.availableCopies <= 1}">Low stock</span>
+                                    <span class="text-muted small" th:unless="${book.availableCopies != null and book.availableCopies <= 1}">Healthy stock</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${books == null or #lists.isEmpty(books)}">
+                                <td colspan="5" class="text-center text-muted py-4">No books found.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
+

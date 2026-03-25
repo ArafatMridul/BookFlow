@@ -81,6 +81,74 @@ body {
     animation: fadeInUp 0.5s ease;
 }
 
+.admin-dashboard-page .admin-banner {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(13, 110, 253, 0.18);
+}
+
+.admin-dashboard-page .admin-banner::after {
+    content: '';
+    position: absolute;
+    inset: auto -80px -90px auto;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    pointer-events: none;
+}
+
+.admin-dashboard-page .banner-summary {
+    backdrop-filter: blur(10px);
+}
+
+.admin-dashboard-page .metric-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    font-size: 0.875rem;
+}
+
+.admin-dashboard-page .metric-pill strong {
+    font-size: 1rem;
+}
+
+.admin-dashboard-page .quick-action-card {
+    display: block;
+    padding: 1rem 1.1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 16px;
+    background: #fff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-dashboard-page .quick-action-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(13, 110, 253, 0.2);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.admin-dashboard-page .quick-action-card:hover .action-arrow {
+    transform: translateX(4px);
+}
+
+.admin-dashboard-page .action-arrow {
+    transition: transform 0.2s ease;
+}
+
+.admin-dashboard-page .snapshot-item {
+    border: 1px solid #eef1f5;
+}
+
+.admin-dashboard-page .snapshot-item .badge {
+    min-width: 3rem;
+    justify-content: center;
+}
+
 .welcome-banner.librarian {
     background: linear-gradient(135deg, #0dcaf0 0%, #0d6efd 100%);
 }
@@ -93,6 +161,10 @@ body {
 .stat-card {
     border-radius: 12px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-dashboard-page .stat-card {
+    border-radius: 16px;
 }
 
 .stat-card:hover {
@@ -186,6 +258,11 @@ body {
 }
 
 @media (max-width: 767.98px) {
+    .admin-dashboard-page .metric-pill {
+        padding: 0.55rem 0.8rem;
+        font-size: 0.82rem;
+    }
+
     .welcome-banner h3 {
         font-size: 1.25rem;
     }

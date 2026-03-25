@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -114,6 +115,21 @@ class AuthServiceTest {
 
             assertThatThrownBy(() -> authService.authenticateUser(request))
                     .isInstanceOf(BadCredentialsException.class);
+        }
+
+        @Test
+        @DisplayName("should throw when account is disabled")
+        void shouldThrowWhenAccountIsDisabled() {
+            LoginRequest request = new LoginRequest();
+            request.setUsernameOrEmail("disableduser");
+            request.setPassword("password123");
+
+            when(authenticationManager.authenticate(any()))
+                    .thenThrow(new DisabledException("User account is disabled"));
+
+            assertThatThrownBy(() -> authService.authenticateUser(request))
+                    .isInstanceOf(DisabledException.class)
+                    .hasMessage("User account is disabled");
         }
 
         @Test

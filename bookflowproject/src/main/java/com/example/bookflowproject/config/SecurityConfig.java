@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -44,6 +46,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    @SuppressWarnings("deprecation")
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
@@ -106,8 +109,8 @@ public class SecurityConfig {
         OncePerRequestFilter apiOnlyJwtFilter = new OncePerRequestFilter() {
             @Override
             protected void doFilterInternal(HttpServletRequest request,
-                                            HttpServletResponse response,
-                                            FilterChain filterChain) throws ServletException, IOException {
+                                            @NonNull HttpServletResponse response,
+                                            @NonNull FilterChain filterChain) throws ServletException, IOException {
                 if (request.getRequestURI().startsWith("/api/")) {
                     jwtAuthenticationFilter.authenticateRequest(request);
                 }
@@ -139,7 +142,10 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
                         .successHandler(roleBasedSuccessHandler())
-                        .failureUrl("/login?error=true")
+                        .failureHandler((request, response, exception) -> {
+                            String errorCode = exception instanceof DisabledException ? "disabled" : "true";
+                            response.sendRedirect("/login?error=" + errorCode);
+                        })
                         .permitAll()
                 )
                 // Logout

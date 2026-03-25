@@ -18,6 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -88,6 +89,24 @@ class AuthApiControllerTest {
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.status").value(401))
                     .andExpect(jsonPath("$.message").value("Invalid username or password"));
+        }
+
+        @Test
+        @DisplayName("should return error when account is disabled")
+        void shouldReturnErrorWhenAccountIsDisabled() throws Exception {
+            LoginRequest request = new LoginRequest();
+            request.setUsernameOrEmail("disabled-user");
+            request.setPassword("password");
+
+            when(authService.authenticateUser(any(LoginRequest.class)))
+                    .thenThrow(new DisabledException("Account is disabled"));
+
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.status").value(403))
+                    .andExpect(jsonPath("$.message").value("Your account is disabled. Please contact an administrator."));
         }
 
         @Test
