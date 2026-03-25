@@ -16,5 +16,6 @@ public interface BorrowingRepository extends JpaRepository<Borrowing, Long> {
     List<Borrowing> findByStatusInOrderByBorrowDateDesc(Collection<String> statuses);
     List<Borrowing> findByUserUsernameOrderByBorrowDateDesc(String username);
     boolean existsByUserIdAndBookIdAndStatusIn(Long userId, Long bookId, Collection<String> statuses);
+    boolean existsByBookId(Long bookId);
 }
 

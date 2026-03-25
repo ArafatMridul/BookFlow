@@ -9,6 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.util.List;
+
 @Controller
 @RequiredArgsConstructor
 public class DashboardController {
@@ -36,8 +38,9 @@ public class DashboardController {
             model.addAttribute("username", authentication.getName());
         }
         model.addAttribute("totalBooks", bookRepository.count());
-        model.addAttribute("currentlyBorrowed", borrowingRepository.countByStatus("BORROWED"));
-        model.addAttribute("overdueReturns", borrowingRepository.countByStatus("OVERDUE"));
+        model.addAttribute("currentlyBorrowed", countBorrowingsByStatuses(List.of("BORROWED", "OVERDUE")));
+        model.addAttribute("returnRequested", countBorrowingsByStatuses(List.of("RETURN_REQUESTED")));
+        model.addAttribute("overdueReturns", countBorrowingsByStatuses(List.of("OVERDUE")));
         return "dashboard/librarian";  // Tests expect "dashboard/librarian"
     }
 
@@ -52,5 +55,9 @@ public class DashboardController {
         }
         model.addAttribute("totalBooks", bookRepository.count());
         return "dashboard/user";  // Tests expect "dashboard/user"
+    }
+
+    private long countBorrowingsByStatuses(List<String> statuses) {
+        return borrowingRepository.findByStatusInOrderByBorrowDateDesc(statuses).size();
     }
 }

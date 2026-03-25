@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,6 +27,20 @@
             <li class="nav-item"><a class="nav-link text-white-50" href="/user/my-borrowings"><i class="fas fa-book-open me-2"></i>My Borrowings</a></li>
             <li class="nav-item"><a class="nav-link text-white-50" href="/user/wishlist"><i class="fas fa-heart me-2"></i>Wishlist</a></li>
         </ul>
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fa-2x me-2"></i>
+                <div>
+                    <small class="d-block fw-bold" th:text="${username}">User</small>
+                    <span class="badge bg-success">Member</span>
+                </div>
+            </div>
+            <form th:action="@{/logout}" method="post" class="mt-3">
+                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </form>
+        </div>
     </div>
 
     <div class="main-content flex-grow-1">
@@ -35,6 +48,7 @@
             <div class="container-fluid">
                 <a href="/user/catalog" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Back to Catalog</a>
                 <span class="navbar-text fw-bold text-success">Book Details</span>
+                <a href="/profile" class="btn btn-light btn-sm me-3"><i class="fas fa-user me-1"></i>Profile</a>
                 <span class="navbar-text" th:text="${username}">User</span>
             </div>
         </nav>

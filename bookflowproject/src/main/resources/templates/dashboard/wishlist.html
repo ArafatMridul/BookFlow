@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,7 +43,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white-50" href="#">
+                <a class="nav-link text-white-50" href="/user/my-borrowings">
                     <i class="fas fa-history me-2"></i>History
                 </a>
             </li>
@@ -62,6 +61,11 @@
                     <span class="badge bg-success">Member</span>
                 </div>
             </div>
+            <form th:action="@{/logout}" method="post" class="mt-3">
+                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </form>
         </div>
     </div>
 
@@ -78,23 +82,10 @@
                     <a href="/user/catalog" class="btn btn-outline-success btn-sm me-3">
                         <i class="fas fa-search me-1"></i>Browse Catalog
                     </a>
-                    <div class="dropdown">
-                        <a class="btn btn-light dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>
-                            <span th:text="${username}">User</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form th:action="@{/logout}" method="post">
-                                    <button type="submit" class="dropdown-item text-danger">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </div>
+                    <a href="/profile" class="btn btn-light btn-sm me-3">
+                        <i class="fas fa-user me-1"></i>Profile
+                    </a>
+                    <span class="navbar-text" th:text="${username}">User</span>
                 </div>
             </div>
         </nav>

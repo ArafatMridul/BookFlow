@@ -8,5 +8,7 @@ import com.example.bookflowproject.entity.Book;
 @Repository
 public interface BookRepository extends JpaRepository<Book, Long> {
     java.util.List<Book> findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(String title, String author);
+    boolean existsByIsbn(String isbn);
+    boolean existsByIsbnAndIdNot(String isbn, Long id);
 }
 

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +15,7 @@
         <div class="sidebar-header p-3 text-center">
             <i class="fas fa-book-open fa-2x mb-2"></i>
             <h5 class="mb-0">BookFlow</h5>
-            <small class="text-muted">Librarian Panel</small>
+            <small class="text-muted">Librarian Portal</small>
         </div>
         <hr class="text-secondary mx-3">
         <ul class="nav flex-column px-2">
@@ -26,23 +25,23 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white-50" href="#">
+                <a class="nav-link text-white-50" href="/librarian/books/manage">
                     <i class="fas fa-book me-2"></i>Manage Books
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white-50" href="/librarian/borrowings">
-                    <i class="fas fa-hand-holding-heart me-2"></i>Borrowings
+                <a class="nav-link text-white-50" href="/librarian/books/add">
+                    <i class="fas fa-circle-plus me-2"></i>Add Books
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white-50" href="/librarian/patrons">
+                    <i class="fas fa-users me-2"></i>Search Patrons
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link text-white-50" href="/librarian/borrowings">
-                    <i class="fas fa-undo-alt me-2"></i>Returns
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white-50" href="#">
-                    <i class="fas fa-search me-2"></i>Search Patrons
+                    <i class="fas fa-hand-holding-heart me-2"></i>Borrowing Management
                 </a>
             </li>
         </ul>
@@ -54,6 +53,11 @@
                     <span class="badge bg-info">Librarian</span>
                 </div>
             </div>
+                <form th:action="@{/logout}" method="post" class="mt-3">
+                    <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </button>
+                </form>
         </div>
     </div>
 
@@ -67,23 +71,10 @@
                 </button>
                 <span class="navbar-text fw-bold text-info">Librarian Dashboard</span>
                 <div class="d-flex align-items-center">
-                    <div class="dropdown">
-                        <a class="btn btn-light dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>
-                            <span th:text="${username}">Librarian</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form th:action="@{/logout}" method="post">
-                                    <button type="submit" class="dropdown-item text-danger">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </div>
+                    <a href="/profile" class="btn btn-light btn-sm me-3">
+                        <i class="fas fa-user me-1"></i>Profile
+                    </a>
+                    <span class="navbar-text" th:text="${username}">Librarian</span>
                 </div>
             </div>
         </nav>
@@ -98,14 +89,14 @@
                     </div>
                     <div class="flex-grow-1 ms-4">
                         <h3 class="mb-1">Welcome back, <span th:text="${username}">Librarian</span>!</h3>
-                        <p class="mb-0 opacity-75">Manage books and assist library patrons.</p>
+                        <p class="mb-0 opacity-75">Manage books, patrons, and borrowing requests.</p>
                     </div>
                 </div>
             </div>
 
             <!-- Stats Cards -->
             <div class="row g-4 mb-4">
-                <div class="col-xl-4 col-md-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="card stat-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -120,7 +111,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="card stat-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -128,14 +119,14 @@
                                     <i class="fas fa-hand-holding-heart fa-lg"></i>
                                 </div>
                                 <div>
-                                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Currently Borrowed</h6>
+                                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Active Loans</h6>
                                     <h3 class="mb-0 fw-bold" th:text="${currentlyBorrowed}">0</h3>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="card stat-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -145,6 +136,21 @@
                                 <div>
                                     <h6 class="text-muted mb-1 text-uppercase small fw-bold">Overdue Returns</h6>
                                     <h3 class="mb-0 fw-bold" th:text="${overdueReturns}">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-warning-subtle text-warning rounded-3 p-3 me-3">
+                                    <i class="fas fa-rotate-left fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Return Requests</h6>
+                                    <h3 class="mb-0 fw-bold" th:text="${returnRequested}">0</h3>
                                 </div>
                             </div>
                         </div>
@@ -161,17 +167,17 @@
                         </div>
                         <div class="card-body px-4">
                             <div class="d-grid gap-3">
-                                <a href="#" class="btn btn-outline-primary text-start py-3 rounded-3">
-                                    <i class="fas fa-plus-circle me-2"></i>Add New Book
+                                <a href="/librarian/books/manage" class="btn btn-outline-primary text-start py-3 rounded-3">
+                                    <i class="fas fa-book me-2"></i>Manage Books
                                 </a>
-                                <a href="/librarian/borrowings" class="btn btn-outline-success text-start py-3 rounded-3">
-                                    <i class="fas fa-hand-holding-heart me-2"></i>Process Borrowing
+                                <a href="/librarian/books/add" class="btn btn-outline-success text-start py-3 rounded-3">
+                                    <i class="fas fa-circle-plus me-2"></i>Add Books
                                 </a>
-                                <a href="/librarian/borrowings" class="btn btn-outline-warning text-start py-3 rounded-3">
-                                    <i class="fas fa-undo-alt me-2"></i>Process Return
+                                <a href="/librarian/patrons" class="btn btn-outline-warning text-start py-3 rounded-3">
+                                    <i class="fas fa-users me-2"></i>Search Patrons
                                 </a>
-                                <a href="#" class="btn btn-outline-info text-start py-3 rounded-3">
-                                    <i class="fas fa-search me-2"></i>Search Patrons
+                                <a href="/librarian/borrowings" class="btn btn-outline-info text-start py-3 rounded-3">
+                                    <i class="fas fa-hand-holding-heart me-2"></i>Borrowing Management
                                 </a>
                             </div>
                         </div>
@@ -185,26 +191,33 @@
                         </div>
                         <div class="card-body px-4">
                             <div class="list-group list-group-flush">
-                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 py-3">
+                                <a href="/librarian/books/manage" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 py-3">
                                     <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1"><i class="fas fa-exclamation-circle text-danger me-2"></i>Overdue Books</h6>
-                                        <span class="badge bg-danger rounded-pill" th:text="${overdueReturns}">0</span>
+                                        <h6 class="mb-1"><i class="fas fa-book text-primary me-2"></i>Manage Books</h6>
+                                        <span class="badge bg-primary rounded-pill">Open</span>
                                     </div>
-                                    <p class="mb-0 small text-muted">Books overdue for return</p>
+                                    <p class="mb-0 small text-muted">View and organize the book inventory</p>
                                 </a>
-                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 py-3">
+                                <a href="/librarian/books/add" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 py-3">
                                     <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1"><i class="fas fa-book text-success me-2"></i>Active Borrowings</h6>
-                                        <span class="badge bg-info rounded-pill" th:text="${currentlyBorrowed}">0</span>
+                                        <h6 class="mb-1"><i class="fas fa-circle-plus text-success me-2"></i>Add Books</h6>
+                                        <span class="badge bg-success rounded-pill">View</span>
                                     </div>
-                                    <p class="mb-0 small text-muted">Books currently checked out</p>
+                                    <p class="mb-0 small text-muted">Create new book records</p>
                                 </a>
-                                <a href="#" class="list-group-item list-group-item-action border-0 rounded-3 py-3">
+                                <a href="/librarian/patrons" class="list-group-item list-group-item-action border-0 rounded-3 py-3">
                                     <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1"><i class="fas fa-info-circle text-primary me-2"></i>Library Status</h6>
-                                        <span class="badge bg-success rounded-pill">OK</span>
+                                        <h6 class="mb-1"><i class="fas fa-users text-danger me-2"></i>Search Patrons</h6>
+                                        <span class="badge bg-danger rounded-pill">Find</span>
                                     </div>
-                                    <p class="mb-0 small text-muted">All systems operational</p>
+                                    <p class="mb-0 small text-muted">Lookup library members by name or email</p>
+                                </a>
+                                <a href="/librarian/borrowings" class="list-group-item list-group-item-action border-0 rounded-3 py-3">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1"><i class="fas fa-hand-holding-heart text-info me-2"></i>Borrowing Management</h6>
+                                        <span class="badge bg-info rounded-pill">Open</span>
+                                    </div>
+                                    <p class="mb-0 small text-muted">Approve, reject, and process return requests</p>
                                 </a>
                             </div>
                         </div>
