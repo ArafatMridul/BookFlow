@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -76,14 +78,16 @@ class LibrarianControllerTest {
         void shouldReturnBorrowingsDashboard() throws Exception {
             when(borrowingRepository.findByStatusOrderByBorrowDateDesc("REQUESTED"))
                     .thenReturn(List.of(borrowing(1L, "REQUESTED", 2)));
-            when(borrowingRepository.findByStatusOrderByBorrowDateDesc("BORROWED"))
-                    .thenReturn(List.of(borrowing(2L, "BORROWED", 1)));
+            when(borrowingRepository.findByStatusOrderByBorrowDateDesc("RETURN_REQUESTED"))
+                .thenReturn(List.of(borrowing(3L, "RETURN_REQUESTED", 0)));
+            when(borrowingRepository.findByStatusInOrderByBorrowDateDesc(List.of("BORROWED", "OVERDUE")))
+                .thenReturn(List.of(borrowing(2L, "BORROWED", 1)));
 
             mockMvc.perform(get("/librarian/borrowings"))
                     .andExpect(status().isOk())
                     .andExpect(view().name("dashboard/librarian-borrowings"))
                     .andExpect(model().attribute("username", "librarian"))
-                    .andExpect(model().attributeExists("requestedBorrowings", "activeBorrowings"));
+                .andExpect(model().attributeExists("requestedBorrowings", "returnRequestedBorrowings", "activeBorrowings"));
         }
     }
 
@@ -115,6 +119,18 @@ class LibrarianControllerTest {
                     .andExpect(model().attributeExists("selectedBook"));
         }
 
+                @Test
+                @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+                void shouldUseSearchWhenManagingBooks() throws Exception {
+                    when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase("java", "java"))
+                        .thenReturn(List.of(book()));
+
+                    mockMvc.perform(get("/librarian/books/manage").param("search", "java"))
+                        .andExpect(status().isOk())
+                        .andExpect(view().name("dashboard/librarian-books"))
+                        .andExpect(model().attribute("search", "java"));
+                }
+
         @Test
         @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
         void shouldUpdateExistingBook() throws Exception {
@@ -137,6 +153,57 @@ class LibrarianControllerTest {
 
         @Test
         @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectUpdateWhenBookMissing() throws Exception {
+            when(bookRepository.findById(404L)).thenReturn(Optional.empty());
+
+            mockMvc.perform(post("/librarian/books/404/update")
+                            .param("title", "Any")
+                            .param("author", "Any"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/manage"))
+                    .andExpect(flash().attribute("errorMsg", "Book not found."));
+
+            verify(bookRepository, never()).save(any(Book.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectUpdateWhenTitleOrAuthorMissing() throws Exception {
+            Book existing = book();
+            existing.setId(1L);
+            when(bookRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            mockMvc.perform(post("/librarian/books/1/update")
+                            .param("title", "")
+                            .param("author", ""))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/manage?bookId=1"))
+                    .andExpect(flash().attribute("errorMsg", "Title and author are required."));
+
+            verify(bookRepository, never()).save(any(Book.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectUpdateWhenIsbnExistsOnAnotherBook() throws Exception {
+            Book existing = book();
+            existing.setId(1L);
+            when(bookRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(bookRepository.existsByIsbnAndIdNot("9780134685991", 1L)).thenReturn(true);
+
+            mockMvc.perform(post("/librarian/books/1/update")
+                            .param("title", "Effective Java")
+                            .param("author", "Joshua Bloch")
+                            .param("isbn", "9780134685991"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/manage?bookId=1"))
+                    .andExpect(flash().attribute("errorMsg", "A book with this ISBN already exists."));
+
+            verify(bookRepository, never()).save(any(Book.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
         void shouldDeleteBookWhenNoBorrowingRecordsExist() throws Exception {
             Book existing = book();
             existing.setId(1L);
@@ -149,6 +216,35 @@ class LibrarianControllerTest {
                     .andExpect(flash().attribute("successMsg", "Book deleted successfully."));
 
             verify(bookRepository).delete(existing);
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectDeleteWhenBookMissing() throws Exception {
+            when(bookRepository.findById(404L)).thenReturn(Optional.empty());
+
+            mockMvc.perform(post("/librarian/books/404/delete"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/manage"))
+                    .andExpect(flash().attribute("errorMsg", "Book not found."));
+
+            verify(bookRepository, never()).delete(any(Book.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectDeleteWhenBorrowingRecordsExist() throws Exception {
+            Book existing = book();
+            existing.setId(2L);
+            when(bookRepository.findById(2L)).thenReturn(Optional.of(existing));
+            when(borrowingRepository.existsByBookId(2L)).thenReturn(true);
+
+            mockMvc.perform(post("/librarian/books/2/delete"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/manage?bookId=2"))
+                    .andExpect(flash().attribute("errorMsg", "This book cannot be deleted because borrowing records already exist."));
+
+            verify(bookRepository, never()).delete(any(Book.class));
         }
     }
 
@@ -169,6 +265,52 @@ class LibrarianControllerTest {
     @Nested
     @DisplayName("POST /librarian/books/add")
     class AddBook {
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectAddBookWhenTitleOrAuthorMissing() throws Exception {
+            mockMvc.perform(post("/librarian/books/add")
+                            .param("title", "")
+                            .param("author", "")
+                            .param("isbn", "9780134494166"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/add"))
+                    .andExpect(flash().attribute("errorMsg", "Title and author are required."));
+
+            verify(bookRepository, never()).save(any(Book.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectAddBookWhenDuplicateIsbn() throws Exception {
+            when(bookRepository.existsByIsbn("9780134494166")).thenReturn(true);
+
+            mockMvc.perform(post("/librarian/books/add")
+                            .param("title", "Clean Architecture")
+                            .param("author", "Robert C. Martin")
+                            .param("isbn", "9780134494166"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/add"))
+                    .andExpect(flash().attribute("errorMsg", "A book with this ISBN already exists."));
+
+            verify(bookRepository, never()).save(any(Book.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldHandleRepositoryErrorWhenAddingBook() throws Exception {
+            doThrow(new RuntimeException("db error")).when(bookRepository).save(any(Book.class));
+
+            mockMvc.perform(post("/librarian/books/add")
+                            .param("title", "Clean Architecture")
+                            .param("author", "Robert C. Martin")
+                            .param("isbn", "9780134494166")
+                            .param("totalCopies", "3")
+                            .param("availableCopies", "3"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/books/manage"))
+                    .andExpect(flash().attributeExists("errorMsg"));
+        }
 
         @Test
         @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
@@ -236,6 +378,21 @@ class LibrarianControllerTest {
 
             verify(bookRepository, never()).save(any(Book.class));
         }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectApprovalWhenRequestMissingOrInvalidStatus() throws Exception {
+            Borrowing borrowing = borrowing(12L, "BORROWED", 2);
+            when(borrowingRepository.findById(12L)).thenReturn(Optional.of(borrowing));
+
+            mockMvc.perform(post("/librarian/borrowings/12/approve"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/borrowings"))
+                    .andExpect(flash().attribute("errorMsg", "Borrow request not found."));
+
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+            verify(bookRepository, never()).save(any(Book.class));
+        }
     }
 
     @Nested
@@ -254,6 +411,116 @@ class LibrarianControllerTest {
                     .andExpect(flash().attribute("successMsg", "Borrow request rejected."));
 
             verify(borrowingRepository).save(any(Borrowing.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectWhenBorrowRequestMissing() throws Exception {
+            when(borrowingRepository.findById(13L)).thenReturn(Optional.empty());
+
+            mockMvc.perform(post("/librarian/borrowings/13/reject"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/borrowings"))
+                    .andExpect(flash().attribute("errorMsg", "Borrow request not found."));
+
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /librarian/borrowings/{id}/process-return")
+    class ProcessReturn {
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldProcessReturnAndIncreaseBookStock() throws Exception {
+            Borrowing borrowing = borrowing(20L, "RETURN_REQUESTED", 1);
+            when(borrowingRepository.findById(20L)).thenReturn(Optional.of(borrowing));
+
+            mockMvc.perform(post("/librarian/borrowings/20/process-return"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/borrowings"))
+                    .andExpect(flash().attribute("successMsg", "Return request processed successfully."));
+
+            verify(borrowingRepository).save(any(Borrowing.class));
+            verify(bookRepository).save(any(Book.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectProcessingWhenReturnRequestMissing() throws Exception {
+            when(borrowingRepository.findById(21L)).thenReturn(Optional.empty());
+
+            mockMvc.perform(post("/librarian/borrowings/21/process-return"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/borrowings"))
+                    .andExpect(flash().attribute("errorMsg", "Return request not found."));
+
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+            verify(bookRepository, never()).save(any(Book.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectProcessingWhenBookMissingFromBorrowing() throws Exception {
+            Borrowing borrowing = borrowing(23L, "RETURN_REQUESTED", 1);
+            borrowing.setBook(null);
+            when(borrowingRepository.findById(23L)).thenReturn(Optional.of(borrowing));
+
+            mockMvc.perform(post("/librarian/borrowings/23/process-return"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/borrowings"))
+                    .andExpect(flash().attribute("errorMsg", "Book not found for this borrowing record."));
+
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+            verify(bookRepository, never()).save(any(Book.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /librarian/borrowings/{id}/reject-return")
+    class RejectReturn {
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectReturnRequest() throws Exception {
+            Borrowing borrowing = borrowing(22L, "RETURN_REQUESTED", 1);
+            when(borrowingRepository.findById(22L)).thenReturn(Optional.of(borrowing));
+
+            mockMvc.perform(post("/librarian/borrowings/22/reject-return"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/borrowings"))
+                    .andExpect(flash().attribute("successMsg", "Return request rejected."));
+
+            verify(borrowingRepository).save(any(Borrowing.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldRejectWhenReturnRequestMissing() throws Exception {
+            when(borrowingRepository.findById(24L)).thenReturn(Optional.empty());
+
+            mockMvc.perform(post("/librarian/borrowings/24/reject-return"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/borrowings"))
+                    .andExpect(flash().attribute("errorMsg", "Return request not found."));
+
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldSetOverdueStatusWhenRejectingLateReturn() throws Exception {
+            Borrowing borrowing = borrowing(25L, "RETURN_REQUESTED", 1);
+            borrowing.setDueDate(LocalDate.now().minusDays(1));
+            when(borrowingRepository.findById(25L)).thenReturn(Optional.of(borrowing));
+
+            mockMvc.perform(post("/librarian/borrowings/25/reject-return"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/borrowings"))
+                    .andExpect(flash().attribute("successMsg", "Return request rejected."));
+
+            verify(borrowingRepository).save(argThat(saved -> "OVERDUE".equals(saved.getStatus())));
         }
     }
 
