@@ -91,6 +91,28 @@
                             </div>
 
                             <form th:if="${!activeBorrowing and !alreadyRequested}" th:action="@{/user/catalog/{id}/request-borrow(id=${book.id})}" method="post">
+                                <div class="mb-4 p-3 bg-light rounded-3">
+                                    <label class="form-label fw-semibold mb-1"><i class="fas fa-ticket me-1 text-success"></i>Renewal Tokens</label>
+                                    <p class="text-muted small mb-2">Base loan: 7 days. Each token adds 7 more days (manual renewal required). Fine: 1 tk/day if you miss a renewal window.</p>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tokensRequested" id="tokens0" value="0" checked>
+                                            <label class="form-check-label" for="tokens0">0 tokens &mdash; 7 days</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tokensRequested" id="tokens1" value="1">
+                                            <label class="form-check-label" for="tokens1">1 token &mdash; up to 14 days</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tokensRequested" id="tokens2" value="2">
+                                            <label class="form-check-label" for="tokens2">2 tokens &mdash; up to 21 days</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tokensRequested" id="tokens3" value="3">
+                                            <label class="form-check-label" for="tokens3">3 tokens &mdash; up to 28 days</label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <button class="btn btn-success btn-lg" type="submit">
                                     <i class="fas fa-paper-plane me-2"></i>Request to Borrow
                                 </button>
