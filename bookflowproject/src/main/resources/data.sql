@@ -32,6 +32,12 @@ INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'user' AND r.name = 'USER'
 ON CONFLICT DO NOTHING;
 
+-- Backfill token/fine columns for existing borrowing rows (added by renewal-token feature)
+UPDATE borrowings SET renewal_tokens_acquired = 0 WHERE renewal_tokens_acquired IS NULL;
+UPDATE borrowings SET renewal_tokens_used = 0 WHERE renewal_tokens_used IS NULL;
+UPDATE borrowings SET fine_amount = 0 WHERE fine_amount IS NULL;
+UPDATE borrowings SET fine_cleared = false WHERE fine_cleared IS NULL;
+
 -- Insert some sample books
 INSERT INTO books (title, author, isbn, publication_year, publisher, total_copies, available_copies)
 VALUES ('The Great Gatsby', 'F. Scott Fitzgerald', '978-0743273565', 1925, 'Scribner', 5, 3)

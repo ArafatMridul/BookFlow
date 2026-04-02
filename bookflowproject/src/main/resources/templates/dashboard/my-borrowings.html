@@ -58,6 +58,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 
+            <!-- Fine system legend -->
+            <div class="alert alert-info border-0 shadow-sm mb-4 py-2">
+                <i class="fas fa-circle-info me-2"></i>
+                <strong>Renewal System:</strong> Base loan is 7 days. Use <strong>Renew</strong> before the period ends to spend a token and add 7 more days.
+                A fine of <strong>1 tk/day</strong> accrues if you miss a renewal window or exceed the final due date.
+                You must <strong>Clear Fine</strong> before submitting a return request.
+            </div>
+
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-list-check me-2 text-success"></i>Borrow Requests and History</h5>
@@ -69,11 +77,12 @@
                             <thead>
                             <tr>
                                 <th>Book</th>
-                                <th>Requested/Borrowed</th>
-                                <th>Due Date</th>
-                                <th>Returned</th>
+                                <th>Borrowed</th>
+                                <th>Period Ends</th>
+                                <th>Tokens</th>
+                                <th>Fine (tk)</th>
                                 <th>Status</th>
-                                <th class="text-end">Action</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -83,8 +92,44 @@
                                     <div class="small text-muted" th:text="${borrowing.book.author}">Author</div>
                                 </td>
                                 <td th:text="${borrowing.borrowDate}">2026-03-14</td>
-                                <td th:text="${borrowing.dueDate}">2026-03-28</td>
-                                <td th:text="${borrowing.returnDate != null ? borrowing.returnDate : '-'}">-</td>
+                                <!-- Period end: show dueDate (= currentPeriodStart+7) for active, returnDate for returned -->
+                                <td>
+                                    <span th:if="${borrowing.status == 'RETURNED' or borrowing.status == 'REJECTED'}"
+                                          th:text="${borrowing.returnDate != null ? borrowing.returnDate : '-'}" class="text-muted">-</span>
+                                    <span th:unless="${borrowing.status == 'RETURNED' or borrowing.status == 'REJECTED'}"
+                                          th:text="${borrowing.dueDate}" th:classappend="${borrowing.calculateCurrentFine() > 0} ? 'text-danger fw-semibold' : ''">-</span>
+                                </td>
+                                <!-- Tokens column -->
+                                <td>
+                                    <span th:if="${borrowing.effectiveTokensAcquired == 0}" class="text-muted small">None</span>
+                                    <span th:unless="${borrowing.effectiveTokensAcquired == 0}">
+                                        <span th:if="${borrowing.remainingTokens > 0}"
+                                              class="badge bg-success-subtle text-success border border-success-subtle me-1"
+                                              th:each="i : ${#numbers.sequence(1, borrowing.remainingTokens)}">
+                                            <i class="fas fa-ticket fa-xs"></i>
+                                        </span>
+                                        <span th:if="${borrowing.effectiveTokensUsed > 0}"
+                                              class="badge bg-secondary-subtle text-secondary border border-secondary-subtle me-1"
+                                              th:each="i : ${#numbers.sequence(1, borrowing.effectiveTokensUsed)}">
+                                            <i class="fas fa-ticket fa-xs"></i>
+                                        </span>
+                                        <div class="small text-muted mt-1"
+                                             th:text="${borrowing.remainingTokens + ' of ' + borrowing.effectiveTokensAcquired + ' left'}"></div>
+                                    </span>
+                                </td>
+                                <!-- Fine column -->
+                                <td>
+                                    <span th:if="${borrowing.effectiveFineCleared}" class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="fas fa-check me-1"></i>Cleared
+                                    </span>
+                                    <span th:unless="${borrowing.effectiveFineCleared}">
+                                        <span th:if="${borrowing.calculateCurrentFine() > 0}"
+                                              class="fw-bold text-danger"
+                                              th:text="${borrowing.calculateCurrentFine() + ' tk'}">0 tk</span>
+                                        <span th:if="${borrowing.calculateCurrentFine() == 0}" class="text-muted">0 tk</span>
+                                    </span>
+                                </td>
+                                <!-- Status column -->
                                 <td>
                                     <span class="badge bg-warning" th:if="${borrowing.status == 'REQUESTED'}">REQUESTED</span>
                                     <span class="badge bg-success" th:if="${borrowing.status == 'BORROWED'}">BORROWED</span>
@@ -93,20 +138,54 @@
                                     <span class="badge bg-secondary" th:if="${borrowing.status == 'RETURNED'}">RETURNED</span>
                                     <span class="badge bg-dark" th:if="${borrowing.status == 'REJECTED'}">REJECTED</span>
                                 </td>
+                                <!-- Actions column -->
                                 <td class="text-end">
-                                    <form th:if="${borrowing.status == 'BORROWED' or borrowing.status == 'OVERDUE'}"
-                                          th:action="@{/user/my-borrowings/{id}/request-return(id=${borrowing.id})}"
-                                          method="post">
-                                        <button class="btn btn-sm btn-outline-primary" type="submit">
-                                            <i class="fas fa-rotate-left me-1"></i>Request Return
-                                        </button>
-                                    </form>
-                                    <span th:if="${borrowing.status == 'RETURN_REQUESTED'}" class="small text-muted">Waiting for librarian</span>
-                                    <span th:if="${borrowing.status != 'BORROWED' and borrowing.status != 'OVERDUE' and borrowing.status != 'RETURN_REQUESTED'}" class="small text-muted">-</span>
+                                    <div class="d-flex flex-column gap-1 align-items-end"
+                                         th:if="${borrowing.status == 'BORROWED' or borrowing.status == 'OVERDUE'}">
+
+                                        <!-- Renew button: only if tokens remain -->
+                                        <form th:if="${borrowing.remainingTokens > 0}"
+                                              th:action="@{/user/my-borrowings/{id}/renew(id=${borrowing.id})}"
+                                              method="post">
+                                            <button class="btn btn-sm btn-outline-success" type="submit"
+                                                    title="Uses 1 token, extends by 7 days">
+                                                <i class="fas fa-rotate me-1"></i>Renew
+                                                <span class="badge bg-success ms-1"
+                                                      th:text="${borrowing.remainingTokens}"></span>
+                                            </button>
+                                        </form>
+
+                                        <!-- Clear Fine button: only if fine > 0 and not yet cleared -->
+                                        <form th:if="${borrowing.calculateCurrentFine() > 0 and !borrowing.effectiveFineCleared}"
+                                              th:action="@{/user/my-borrowings/{id}/clear-fine(id=${borrowing.id})}"
+                                              method="post">
+                                            <button class="btn btn-sm btn-warning" type="submit">
+                                                <i class="fas fa-coins me-1"></i>Clear Fine
+                                                (<span th:text="${borrowing.calculateCurrentFine()}"></span> tk)
+                                            </button>
+                                        </form>
+
+                                        <!-- Return Request: only when no outstanding fine -->
+                                        <form th:unless="${borrowing.hasOutstandingFine()}"
+                                              th:action="@{/user/my-borrowings/{id}/request-return(id=${borrowing.id})}"
+                                              method="post">
+                                            <button class="btn btn-sm btn-outline-primary" type="submit">
+                                                <i class="fas fa-rotate-left me-1"></i>Request Return
+                                            </button>
+                                        </form>
+                                        <span th:if="${borrowing.hasOutstandingFine()}"
+                                              class="small text-danger">Clear fine first</span>
+                                    </div>
+
+                                    <span th:if="${borrowing.status == 'RETURN_REQUESTED'}" class="small text-muted">
+                                        <i class="fas fa-hourglass-half me-1"></i>Waiting for librarian
+                                    </span>
+                                    <span th:if="${borrowing.status != 'BORROWED' and borrowing.status != 'OVERDUE' and borrowing.status != 'RETURN_REQUESTED'}"
+                                          class="small text-muted">-</span>
                                 </td>
                             </tr>
                             <tr th:if="${borrowings == null or #lists.isEmpty(borrowings)}">
-                                <td colspan="6" class="text-center text-muted py-4">No borrowing records yet.</td>
+                                <td colspan="7" class="text-center text-muted py-4">No borrowing records yet.</td>
                             </tr>
                             </tbody>
                         </table>

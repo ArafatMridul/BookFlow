@@ -59,6 +59,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 
+            <!-- ── Pending Requests ── -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0 pt-4 px-4">
                     <h5 class="mb-0"><i class="fas fa-inbox me-2 text-info"></i>Pending Requests</h5>
@@ -71,7 +72,7 @@
                                 <th>Patron</th>
                                 <th>Book</th>
                                 <th>Requested On</th>
-                                <th>Default Due Date</th>
+                                <th>Tokens Requested</th>
                                 <th class="text-end">Action</th>
                             </tr>
                             </thead>
@@ -86,7 +87,14 @@
                                     <div class="small text-muted" th:text="${borrowing.book != null ? borrowing.book.author : '-'}">Author</div>
                                 </td>
                                 <td th:text="${borrowing.borrowDate}">2026-03-14</td>
-                                <td th:text="${borrowing.dueDate}">2026-03-28</td>
+                                <td>
+                                    <span th:if="${borrowing.effectiveTokensAcquired == 0}" class="text-muted small">No tokens</span>
+                                    <span th:unless="${borrowing.effectiveTokensAcquired == 0}">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle"
+                                              th:text="${borrowing.effectiveTokensAcquired + ' token' + (borrowing.effectiveTokensAcquired > 1 ? 's' : '')}"></span>
+                                        <div class="small text-muted">Max loan: <span th:text="${7 + borrowing.effectiveTokensAcquired * 7}"></span> days</div>
+                                    </span>
+                                </td>
                                 <td class="text-end">
                                     <div class="d-flex gap-2 justify-content-end">
                                         <form th:action="@{/librarian/borrowings/{id}/approve(id=${borrowing.id})}" method="post">
@@ -107,6 +115,7 @@
                 </div>
             </div>
 
+            <!-- ── Return Requests ── -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0 pt-4 px-4">
                     <h5 class="mb-0"><i class="fas fa-box-open me-2 text-primary"></i>Return Requests</h5>
@@ -119,7 +128,9 @@
                                 <th>Patron</th>
                                 <th>Book</th>
                                 <th>Borrowed On</th>
-                                <th>Due Date</th>
+                                <th>Period End</th>
+                                <th>Renewals</th>
+                                <th>Fine Status</th>
                                 <th class="text-end">Action</th>
                             </tr>
                             </thead>
@@ -134,7 +145,21 @@
                                     <div class="small text-muted" th:text="${borrowing.book != null ? borrowing.book.author : '-'}">Author</div>
                                 </td>
                                 <td th:text="${borrowing.borrowDate}">2026-03-14</td>
-                                <td th:text="${borrowing.dueDate}">2026-03-28</td>
+                                <td th:text="${borrowing.dueDate}">2026-03-21</td>
+                                <td>
+                                    <span class="small"
+                                          th:text="${borrowing.effectiveTokensUsed + ' / ' + borrowing.effectiveTokensAcquired + ' used'}">0 / 0 used</span>
+                                </td>
+                                <td>
+                                    <span th:if="${borrowing.effectiveFineCleared}" class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Fine Cleared
+                                    </span>
+                                    <span th:unless="${borrowing.effectiveFineCleared}">
+                                        <span th:if="${borrowing.effectiveFineAmount > 0}" class="badge bg-warning text-dark"
+                                              th:text="${(long)borrowing.effectiveFineAmount + ' tk (paid)'}"></span>
+                                        <span th:if="${borrowing.effectiveFineAmount == 0}" class="badge bg-light text-muted">No Fine</span>
+                                    </span>
+                                </td>
                                 <td class="text-end">
                                     <div class="d-flex gap-2 justify-content-end">
                                         <form th:action="@{/librarian/borrowings/{id}/process-return(id=${borrowing.id})}" method="post">
@@ -147,7 +172,7 @@
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(returnRequestedBorrowings)}">
-                                <td colspan="5" class="text-center text-muted py-4">No return requests.</td>
+                                <td colspan="7" class="text-center text-muted py-4">No return requests.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -155,6 +180,7 @@
                 </div>
             </div>
 
+            <!-- ── Currently Borrowed ── -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 pt-4 px-4">
                     <h5 class="mb-0"><i class="fas fa-book-reader me-2 text-success"></i>Currently Borrowed</h5>
@@ -167,23 +193,41 @@
                                 <th>Patron</th>
                                 <th>Book</th>
                                 <th>Borrowed On</th>
-                                <th>Due Date</th>
+                                <th>Period Ends</th>
+                                <th>Tokens Left</th>
+                                <th>Fine (tk)</th>
                                 <th>Status</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="borrowing : ${activeBorrowings}">
-                                <td th:text="${borrowing.user != null ? borrowing.user.username : 'Unknown user'}">user</td>
+                                <td>
+                                    <div class="fw-semibold" th:text="${borrowing.user != null ? borrowing.user.username : 'Unknown user'}">user</div>
+                                    <div class="small text-muted" th:text="${borrowing.user != null ? borrowing.user.email : '-'}">email</div>
+                                </td>
                                 <td th:text="${borrowing.book != null ? borrowing.book.title : 'Unknown book'}">book</td>
                                 <td th:text="${borrowing.borrowDate}">2026-03-14</td>
-                                <td th:text="${borrowing.dueDate}">2026-03-28</td>
+                                <td th:text="${borrowing.dueDate}"
+                                    th:classappend="${borrowing.calculateCurrentFine() > 0} ? 'text-danger fw-semibold' : ''">2026-03-21</td>
+                                <td>
+                                    <span th:if="${borrowing.effectiveTokensAcquired == 0}" class="text-muted small">None</span>
+                                    <span th:unless="${borrowing.effectiveTokensAcquired == 0}"
+                                          th:text="${borrowing.remainingTokens + ' / ' + borrowing.effectiveTokensAcquired}"
+                                          class="small"></span>
+                                </td>
+                                <td>
+                                    <span th:if="${borrowing.calculateCurrentFine() > 0}"
+                                          class="fw-bold text-danger"
+                                          th:text="${borrowing.calculateCurrentFine() + ' tk'}">0 tk</span>
+                                    <span th:if="${borrowing.calculateCurrentFine() == 0}" class="text-muted">0</span>
+                                </td>
                                 <td>
                                     <span class="badge bg-success" th:if="${borrowing.status == 'BORROWED'}">BORROWED</span>
                                     <span class="badge bg-danger" th:if="${borrowing.status == 'OVERDUE'}">OVERDUE</span>
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(activeBorrowings)}">
-                                <td colspan="5" class="text-center text-muted py-4">No active borrowings.</td>
+                                <td colspan="7" class="text-center text-muted py-4">No active borrowings.</td>
                             </tr>
                             </tbody>
                         </table>

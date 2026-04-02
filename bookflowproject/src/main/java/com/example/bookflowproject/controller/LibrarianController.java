@@ -223,7 +223,8 @@ public class LibrarianController {
 
         LocalDate borrowDate = LocalDate.now();
         borrowing.setBorrowDate(borrowDate);
-        borrowing.setDueDate(borrowDate.plusDays(14));
+        borrowing.setCurrentPeriodStart(borrowDate);
+        borrowing.setDueDate(borrowDate.plusDays(7)); // base 7-day period
         borrowing.setReturnDate(null);
         borrowing.setStatus("BORROWED");
         borrowingRepository.save(borrowing);
@@ -285,12 +286,10 @@ public class LibrarianController {
             return "redirect:/librarian/borrowings";
         }
 
-        LocalDate dueDate = borrowing.getDueDate();
-        if (dueDate != null && LocalDate.now().isAfter(dueDate)) {
-            borrowing.setStatus("OVERDUE");
-        } else {
-            borrowing.setStatus("BORROWED");
-        }
+        LocalDate periodEnd = borrowing.getCurrentPeriodEnd();
+        boolean pastDeadline = periodEnd != null && LocalDate.now().isAfter(periodEnd)
+                && borrowing.getRemainingTokens() == 0;
+        borrowing.setStatus(pastDeadline ? "OVERDUE" : "BORROWED");
 
         borrowingRepository.save(borrowing);
         redirectAttributes.addFlashAttribute("successMsg", "Return request rejected.");

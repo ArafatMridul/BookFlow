@@ -115,6 +115,7 @@ public class CatalogController {
 
     @PostMapping("/catalog/{bookId}/request-borrow")
     public String requestBorrow(@PathVariable Long bookId,
+                                @RequestParam(defaultValue = "0") int tokensRequested,
                                 Authentication authentication,
                                 RedirectAttributes redirectAttributes) {
         if (authentication == null) {
@@ -141,12 +142,15 @@ public class CatalogController {
             return "redirect:/user/catalog/" + bookId;
         }
 
+        int tokens = Math.max(0, Math.min(3, tokensRequested));
+
         Borrowing borrowing = new Borrowing();
         borrowing.setUser(user);
         borrowing.setBook(book);
         borrowing.setBorrowDate(LocalDate.now());
-        borrowing.setDueDate(LocalDate.now().plusDays(14));
+        borrowing.setDueDate(LocalDate.now().plusDays(7)); // base 7-day period; overwritten on approval
         borrowing.setStatus("REQUESTED");
+        borrowing.setRenewalTokensAcquired(tokens);
         borrowingRepository.save(borrowing);
 
         redirectAttributes.addFlashAttribute("successMsg", "Borrow request sent to the librarian.");
@@ -160,6 +164,87 @@ public class CatalogController {
             model.addAttribute("borrowings", borrowingRepository.findByUserUsernameOrderByBorrowDateDesc(authentication.getName()));
         }
         return "dashboard/my-borrowings";
+    }
+
+    @PostMapping("/my-borrowings/{borrowingId}/renew")
+    public String renewBorrowing(@PathVariable Long borrowingId,
+                                  Authentication authentication,
+                                  RedirectAttributes redirectAttributes) {
+        if (authentication == null) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Please log in first.");
+            return "redirect:/login";
+        }
+
+        Borrowing borrowing = borrowingRepository.findById(borrowingId).orElse(null);
+        if (borrowing == null || borrowing.getUser() == null
+                || !authentication.getName().equalsIgnoreCase(borrowing.getUser().getUsername())) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Borrowing record not found.");
+            return "redirect:/user/my-borrowings";
+        }
+
+        if (!"BORROWED".equalsIgnoreCase(borrowing.getStatus())
+                && !"OVERDUE".equalsIgnoreCase(borrowing.getStatus())) {
+            redirectAttributes.addFlashAttribute("errorMsg", "This item is not eligible for renewal.");
+            return "redirect:/user/my-borrowings";
+        }
+
+        if (borrowing.getRemainingTokens() <= 0) {
+            redirectAttributes.addFlashAttribute("errorMsg", "No renewal tokens remaining for this book.");
+            return "redirect:/user/my-borrowings";
+        }
+
+        // Commit any fine accrued during the missed window (days past period end)
+        LocalDate today = LocalDate.now();
+        LocalDate periodEnd = borrowing.getCurrentPeriodEnd();
+        if (periodEnd != null && today.isAfter(periodEnd)) {
+            long daysLate = java.time.temporal.ChronoUnit.DAYS.between(periodEnd, today);
+            borrowing.setFineAmount(borrowing.getEffectiveFineAmount() + daysLate);
+        }
+
+        // Consume one token and start a fresh 7-day period from today
+        borrowing.setRenewalTokensUsed(borrowing.getEffectiveTokensUsed() + 1);
+        borrowing.setCurrentPeriodStart(today);
+        borrowing.setDueDate(today.plusDays(7));
+        borrowing.setFineCleared(false);
+        borrowing.setStatus("BORROWED");
+        borrowingRepository.save(borrowing);
+
+        redirectAttributes.addFlashAttribute("successMsg",
+                "Book renewed! New due date: " + borrowing.getDueDate()
+                + ". Tokens remaining: " + borrowing.getRemainingTokens() + ".");
+        return "redirect:/user/my-borrowings";
+    }
+
+    @PostMapping("/my-borrowings/{borrowingId}/clear-fine")
+    public String clearFine(@PathVariable Long borrowingId,
+                             Authentication authentication,
+                             RedirectAttributes redirectAttributes) {
+        if (authentication == null) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Please log in first.");
+            return "redirect:/login";
+        }
+
+        Borrowing borrowing = borrowingRepository.findById(borrowingId).orElse(null);
+        if (borrowing == null || borrowing.getUser() == null
+                || !authentication.getName().equalsIgnoreCase(borrowing.getUser().getUsername())) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Borrowing record not found.");
+            return "redirect:/user/my-borrowings";
+        }
+
+        long fine = borrowing.calculateCurrentFine();
+        if (fine <= 0) {
+            redirectAttributes.addFlashAttribute("errorMsg", "No outstanding fine to clear.");
+            return "redirect:/user/my-borrowings";
+        }
+
+        // Simulate payment: lock in the fine amount for records and mark as cleared
+        borrowing.setFineAmount((double) fine);
+        borrowing.setFineCleared(true);
+        borrowingRepository.save(borrowing);
+
+        redirectAttributes.addFlashAttribute("successMsg",
+                "Fine of " + fine + " tk cleared. You may now submit a return request.");
+        return "redirect:/user/my-borrowings";
     }
 
     @PostMapping("/my-borrowings/{borrowingId}/request-return")
@@ -181,6 +266,13 @@ public class CatalogController {
         if (!"BORROWED".equalsIgnoreCase(borrowing.getStatus())
                 && !"OVERDUE".equalsIgnoreCase(borrowing.getStatus())) {
             redirectAttributes.addFlashAttribute("errorMsg", "This item is not eligible for return request.");
+            return "redirect:/user/my-borrowings";
+        }
+
+        if (borrowing.hasOutstandingFine()) {
+            redirectAttributes.addFlashAttribute("errorMsg",
+                    "You have an outstanding fine of " + borrowing.calculateCurrentFine()
+                    + " tk. Please clear your fine before submitting a return request.");
             return "redirect:/user/my-borrowings";
         }
 
