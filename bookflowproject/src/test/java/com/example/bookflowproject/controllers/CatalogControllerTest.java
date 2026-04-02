@@ -140,7 +140,7 @@ class CatalogControllerTest {
         void shouldRedirectToLoginWhenBorrowRequestIsAnonymous() {
             RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
 
-            String view = catalogController.requestBorrow(1L, null, redirectAttributes);
+            String view = catalogController.requestBorrow(1L, 0, null, redirectAttributes);
 
             assertEquals("redirect:/login", view);
             assertEquals("Please log in first.", redirectAttributes.getFlashAttributes().get("errorMsg"));
@@ -153,7 +153,7 @@ class CatalogControllerTest {
             when(bookRepository.findById(1L)).thenReturn(Optional.empty());
 
             RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
-            String view = catalogController.requestBorrow(1L, authentication("reader", "USER"), redirectAttributes);
+            String view = catalogController.requestBorrow(1L, 0, authentication("reader", "USER"), redirectAttributes);
 
             assertEquals("redirect:/user/catalog", view);
             assertEquals("Unable to process request for this book.", redirectAttributes.getFlashAttributes().get("errorMsg"));
@@ -171,7 +171,7 @@ class CatalogControllerTest {
             when(borrowingRepository.existsByUserIdAndBookIdAndStatusIn(eq(5L), eq(1L), anyCollection())).thenReturn(false);
 
             RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
-            String view = catalogController.requestBorrow(1L, authentication("reader", "USER"), redirectAttributes);
+            String view = catalogController.requestBorrow(1L, 0, authentication("reader", "USER"), redirectAttributes);
 
             assertEquals("redirect:/user/catalog/1", view);
             assertEquals("Borrow request sent to the librarian.", redirectAttributes.getFlashAttributes().get("successMsg"));
@@ -189,7 +189,7 @@ class CatalogControllerTest {
             when(borrowingRepository.existsByUserIdAndBookIdAndStatusIn(eq(5L), eq(1L), anyCollection())).thenReturn(true);
 
             RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
-            String view = catalogController.requestBorrow(1L, authentication("reader", "USER"), redirectAttributes);
+            String view = catalogController.requestBorrow(1L, 0, authentication("reader", "USER"), redirectAttributes);
 
             assertEquals("redirect:/user/catalog/1", view);
             assertEquals("You already have a pending or active borrowing for this book.", redirectAttributes.getFlashAttributes().get("errorMsg"));
