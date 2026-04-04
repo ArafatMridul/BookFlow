@@ -319,6 +319,210 @@ class CatalogControllerTest {
             verify(borrowingRepository, never()).findById(any(Long.class));
             verify(borrowingRepository, never()).save(any(Borrowing.class));
         }
+
+        @Test
+        void shouldBlockReturnRequestWhenOutstandingFine() {
+            User user = user("reader");
+            Borrowing borrowing = borrowing(book(9L, "Refactoring"), "BORROWED");
+            borrowing.setUser(user);
+            borrowing.setFineAmount(5.0); // committed fine, not cleared → calculateCurrentFine() returns 5
+
+            when(borrowingRepository.findById(19L)).thenReturn(Optional.of(borrowing));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.requestReturn(19L, authentication("reader", "USER"), redirectAttributes);
+
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("You have an outstanding fine of 5 tk. Please clear your fine before submitting a return request.",
+                    redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("renewBorrowing")
+    class RenewBorrowing {
+
+        @Test
+        void shouldRedirectToLoginWhenAnonymous() {
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.renewBorrowing(1L, null, redirectAttributes);
+            assertEquals("redirect:/login", view);
+            assertEquals("Please log in first.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectWhenBorrowingNotFound() {
+            when(borrowingRepository.findById(99L)).thenReturn(Optional.empty());
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.renewBorrowing(99L, authentication("reader", "USER"), redirectAttributes);
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("Borrowing record not found.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectWhenBorrowingBelongsToAnotherUser() {
+            User otherUser = user("other");
+            Borrowing borrowing = borrowing(book(1L, "Book"), "BORROWED");
+            borrowing.setUser(otherUser);
+            when(borrowingRepository.findById(30L)).thenReturn(Optional.of(borrowing));
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.renewBorrowing(30L, authentication("reader", "USER"), redirectAttributes);
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("Borrowing record not found.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectWhenStatusIsNotEligibleForRenewal() {
+            User user = user("reader");
+            Borrowing borrowing = borrowing(book(1L, "Book"), "RETURN_REQUESTED");
+            borrowing.setUser(user);
+            when(borrowingRepository.findById(31L)).thenReturn(Optional.of(borrowing));
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.renewBorrowing(31L, authentication("reader", "USER"), redirectAttributes);
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("This item is not eligible for renewal.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectWhenNoRenewalTokensRemaining() {
+            User user = user("reader");
+            Borrowing borrowing = borrowing(book(1L, "Book"), "BORROWED");
+            borrowing.setUser(user);
+            borrowing.setRenewalTokensAcquired(2);
+            borrowing.setRenewalTokensUsed(2); // all tokens consumed
+            when(borrowingRepository.findById(32L)).thenReturn(Optional.of(borrowing));
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.renewBorrowing(32L, authentication("reader", "USER"), redirectAttributes);
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("No renewal tokens remaining for this book.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRenewSuccessfullyWithinPeriodWithoutAccruingFine() {
+            User user = user("reader");
+            Borrowing borrowing = borrowing(book(1L, "Book"), "BORROWED");
+            borrowing.setUser(user);
+            borrowing.setRenewalTokensAcquired(2);
+            borrowing.setRenewalTokensUsed(0);
+            borrowing.setCurrentPeriodStart(LocalDate.now().minusDays(3)); // period ends in 4 days, not overdue
+            when(borrowingRepository.findById(33L)).thenReturn(Optional.of(borrowing));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.renewBorrowing(33L, authentication("reader", "USER"), redirectAttributes);
+
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertTrue(redirectAttributes.getFlashAttributes().containsKey("successMsg"));
+            verify(borrowingRepository).save(borrowing);
+            assertEquals(1, borrowing.getEffectiveTokensUsed());
+            assertEquals(LocalDate.now(), borrowing.getCurrentPeriodStart());
+            assertEquals(LocalDate.now().plusDays(7), borrowing.getDueDate());
+            assertEquals(0.0, borrowing.getEffectiveFineAmount(), 0.001); // no fine accrued
+        }
+
+        @Test
+        void shouldCommitFineAndRenewWhenPastPeriodEnd() {
+            User user = user("reader");
+            Borrowing borrowing = borrowing(book(1L, "Book"), "OVERDUE");
+            borrowing.setUser(user);
+            borrowing.setRenewalTokensAcquired(3);
+            borrowing.setRenewalTokensUsed(0);
+            borrowing.setFineAmount(0.0);
+            // period started 10 days ago → ended 3 days ago → 3 days of fine to commit
+            borrowing.setCurrentPeriodStart(LocalDate.now().minusDays(10));
+            when(borrowingRepository.findById(34L)).thenReturn(Optional.of(borrowing));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.renewBorrowing(34L, authentication("reader", "USER"), redirectAttributes);
+
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertTrue(redirectAttributes.getFlashAttributes().containsKey("successMsg"));
+            verify(borrowingRepository).save(borrowing);
+            assertEquals(3.0, borrowing.getEffectiveFineAmount(), 0.001); // 3 days × 1 tk committed
+            assertEquals(1, borrowing.getEffectiveTokensUsed());
+            assertEquals(LocalDate.now(), borrowing.getCurrentPeriodStart());
+            assertEquals(LocalDate.now().plusDays(7), borrowing.getDueDate());
+        }
+    }
+
+    @Nested
+    @DisplayName("clearFine")
+    class ClearFine {
+
+        @Test
+        void shouldRedirectToLoginWhenAnonymous() {
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.clearFine(1L, null, redirectAttributes);
+            assertEquals("redirect:/login", view);
+            assertEquals("Please log in first.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectWhenBorrowingNotFound() {
+            when(borrowingRepository.findById(99L)).thenReturn(Optional.empty());
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.clearFine(99L, authentication("reader", "USER"), redirectAttributes);
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("Borrowing record not found.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectWhenBorrowingBelongsToAnotherUser() {
+            User otherUser = user("other");
+            Borrowing borrowing = borrowing(book(1L, "Book"), "OVERDUE");
+            borrowing.setUser(otherUser);
+            when(borrowingRepository.findById(38L)).thenReturn(Optional.of(borrowing));
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.clearFine(38L, authentication("reader", "USER"), redirectAttributes);
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("Borrowing record not found.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldRejectWhenNoOutstandingFine() {
+            User user = user("reader");
+            Borrowing borrowing = borrowing(book(1L, "Book"), "BORROWED");
+            borrowing.setUser(user);
+            // currentPeriodStart within period → no overdue fine; fineAmount defaults to 0
+            borrowing.setCurrentPeriodStart(LocalDate.now().minusDays(3));
+            when(borrowingRepository.findById(40L)).thenReturn(Optional.of(borrowing));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.clearFine(40L, authentication("reader", "USER"), redirectAttributes);
+
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("No outstanding fine to clear.", redirectAttributes.getFlashAttributes().get("errorMsg"));
+            verify(borrowingRepository, never()).save(any(Borrowing.class));
+        }
+
+        @Test
+        void shouldClearFineSuccessfullyAndLockAmount() {
+            User user = user("reader");
+            Borrowing borrowing = borrowing(book(1L, "Book"), "OVERDUE");
+            borrowing.setUser(user);
+            borrowing.setFineAmount(0.0);
+            // period started 10 days ago → ended 3 days ago → fine = 3 tk
+            borrowing.setCurrentPeriodStart(LocalDate.now().minusDays(10));
+            when(borrowingRepository.findById(41L)).thenReturn(Optional.of(borrowing));
+
+            RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+            String view = catalogController.clearFine(41L, authentication("reader", "USER"), redirectAttributes);
+
+            assertEquals("redirect:/user/my-borrowings", view);
+            assertEquals("Fine of 3 tk cleared. You may now submit a return request.",
+                    redirectAttributes.getFlashAttributes().get("successMsg"));
+            verify(borrowingRepository).save(borrowing);
+            assertTrue(borrowing.getFineCleared());
+            assertEquals(3.0, borrowing.getFineAmount(), 0.001);
+        }
     }
 
     private UsernamePasswordAuthenticationToken authentication(String username, String role) {

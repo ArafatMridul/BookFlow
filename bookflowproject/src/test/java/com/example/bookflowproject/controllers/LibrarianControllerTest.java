@@ -522,6 +522,23 @@ class LibrarianControllerTest {
 
             verify(borrowingRepository).save(argThat(saved -> "OVERDUE".equals(saved.getStatus())));
         }
+
+        @Test
+        @WithMockUser(username = "librarian", roles = {"LIBRARIAN"})
+        void shouldSetBorrowedWhenPastDeadlineButRenewalTokensRemain() throws Exception {
+            Borrowing borrowing = borrowing(26L, "RETURN_REQUESTED", 1);
+            borrowing.setDueDate(LocalDate.now().minusDays(1)); // past deadline
+            borrowing.setRenewalTokensAcquired(2);
+            borrowing.setRenewalTokensUsed(0); // 2 tokens remain → getRemainingTokens() = 2 ≠ 0 → not OVERDUE
+            when(borrowingRepository.findById(26L)).thenReturn(Optional.of(borrowing));
+
+            mockMvc.perform(post("/librarian/borrowings/26/reject-return"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/librarian/borrowings"))
+                    .andExpect(flash().attribute("successMsg", "Return request rejected."));
+
+            verify(borrowingRepository).save(argThat(saved -> "BORROWED".equals(saved.getStatus())));
+        }
     }
 
     private Borrowing borrowing(Long id, String status, int availableCopies) {
