@@ -443,7 +443,7 @@ URL Pattern              Allowed Roles
 ### Step 1 — Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/BookFlow.git
+git clone https://github.com/ArafatMridul/BookFlow.git
 cd BookFlow/bookflowproject
 ```
 
